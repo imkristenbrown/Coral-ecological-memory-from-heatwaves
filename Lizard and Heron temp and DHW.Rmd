@@ -1,0 +1,193 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+temp<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/NOAA and in situ 24 hour temperature means_Lizard_2014-2020.csv", strip.white=T)
+temp$Date<- as.Date(temp$Date, format = "%Y-%m-%d")
+temp$Where<- as.factor(temp$Where)
+temp$Site<- as.factor(temp$Site)
+#temp$Date_Time <- as.POSIXct(BVPAR$Date_Time,tz="Etc/GMT-10",usetz=TRUE)
+temp
+```
+```{r}
+tempavg<-summarySE(temp, measurevar='Temperature', groupvars=c('Where','Date'), na.rm=TRUE, conf.interval = 0.95)
+tempavg
+```
+```{r}
+DHWavg<-summarySE(temp, measurevar='DHW', groupvars=c('Where','Date'), na.rm=TRUE, conf.interval = 0.95)
+DHWavg
+```
+
+```{r}
+temp.lm<- lm(Temperature~Site,  data=temp, na.action = na.exclude)
+Anova(temp.lm, type=3)
+tukey<- emmeans(temp.lm, list(pairwise ~ Site), adjust = "tukey")
+tukey
+```
+
+```{r}
+unique(temp$Site)
+```
+
+```{r}
+temp$Where <- factor(temp$Where, levels=c("Satellite","In situ"))
+temp$Date<- as.Date(as.POSIXct(temp$Date, origin="1970-01-01"))
+tempfig<-ggplot(tempavg, aes(y=Temperature, x=Date, color=Where))+
+  #geom_point()+
+  geom_line(size=1, alpha=0.8)+
+  #geom_ribbon(aes(ymin=Temperature-se, ymax=Temperature+se), alpha=0.4)+
+  scale_fill_manual("Where", values=c("In situ"="coral1","Satellite"= "indianred"))+
+  scale_color_manual("Where", values=c("In situ"="brown4","Satellite"= "coral2"))+
+  geom_hline(yintercept = 28.7, linetype="solid", color = 'black', size=0.7, show.legend = TRUE)+
+  geom_hline(yintercept = 29.7, linetype="dashed", color = 'black', size=0.7, show.legend = TRUE)+
+  scale_x_date(limits=as.Date(c("2014-09-01","2020-08-31")),date_breaks = "1 year", date_labels = "%Y", expand=c(0.015,0.015))+
+    scale_y_continuous(expression(Temperature~(degree~C)), breaks=c(24.5,26,27.5,29,30.5), limits=c(24,31))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5,size=12),
+        plot.title = element_text(margin = margin(t = 10, b = 10), hjust=0.5),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.background = element_blank(), 
+        strip.text = element_blank(),
+        legend.title = element_blank(),
+        legend.position=c(0.15,0.85),
+        axis.text.y = element_text(vjust=0.5, size=12),  
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size=12))
+tempfig
+```
+```{r}
+DHWfig<-ggplot(DHWavg, aes(y=DHW, x=Date, color=Where))+
+  #geom_line(data=DHWavg, aes(y=DHW, x=Date, color=Where), size=0.75,  alpha=0.8)+
+  geom_area(aes(fill=Where, x=Date), alpha=0.4) +
+  scale_fill_manual("Where", values=c("In situ"="brown4","Satellite"= "coral2"))+
+  scale_color_manual("Where", values=c("In situ"="brown4","Satellite"= "coral2"))+
+  scale_x_date(limits=as.Date(c("2014-09-01","2020-08-31")),date_breaks = "1 year", date_labels = "%Y", expand=c(0.015,0.015))+
+  scale_y_continuous(expression(Degree~heating~weeks), breaks=c(0.0,4.0,8.0,12,13.5), limits=c(0,14))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5,size=12),#angling the labels on the x-axis
+        plot.title = element_text(margin = margin(t = 10, b = 10), hjust=0.5),#telling it where to position our plot title
+        panel.background= element_rect(fill=NA, color='black'),#this is making the black box around the graph
+        #legend.position = c(0.15,0.3),
+        strip.background = element_blank(), 
+        strip.text = element_blank(),
+        legend.title = element_blank(),
+        legend.position=c(0.15,0.85),
+        axis.text.y = element_text(vjust=0.5, size=12), #making the axis text larger 
+        axis.title.x = element_blank(),#making the axis title larger 
+        axis.title.y = element_text(size=12))#making the axis title larger 
+DHWfig
+```
+
+```{r}
+library(cowplot)
+tempboth<-plot_grid(tempfig,DHWfig,  nrow=2, align="h")  
+tempboth
+```
+
+```{r}
+tempsub<-ggplot(data=subset(temp, Site==c("GB", "TS","BV")), aes(y=Temperature, x=Date, color=Site))+
+  geom_line(aes(y=Temperature, x=Date), size=0.75, alpha=0.8)+
+  #geom_area(aes(y=Fill, x=Date),fill="grey",alpha=0.6) +
+  scale_color_manual("Site", values=c("BV"="brown3","GB"="coral2", "TS"= "orange"))+
+  scale_y_continuous(expression(Temperature~(degree~C)), breaks=c(24.5,26,27.5,29,30.5), limits=c(24,31))+
+  scale_x_date(limits=as.Date(c("2019-11-26","2020-03-13")),date_breaks= "2 weeks",date_labels = "%d %b")+
+  theme_classic()+
+  theme(axis.text.x=element_text(hjust=0.5, size=12),
+        plot.title = element_text(margin = margin(t = 10, b = -20), hjust=0.7),
+        panel.background= element_rect(fill=NA, color='black'),
+        axis.text.y = element_text(vjust=0.5, size=12), 
+        axis.title.x = element_text(vjust=0.5, size=12),
+        axis.title.y = element_text(vjust=0.5, size=12))
+        #legend.position = 'none')
+tempsub
+```
+
+```{r}
+DHWsub<-ggplot(data=subset(temp, Site==c("GB", "TS","BV")), aes(y=DHW, x=Date, color=Site))+
+  geom_line(aes(y=DHW, x=Date), size=0.75, alpha=0.8, linetype="dashed")+
+  #geom_area(aes(y=Fill, x=Date),fill="grey",alpha=0.6) +
+  scale_color_manual("Site", values=c("BV"="brown3","GB"="coral2", "TS"= "orange"))+
+  scale_y_continuous(expression(Degree~Heating~Weeks), limits=c(0,8))+
+  scale_x_date(limits=as.Date(c("2019-11-26","2020-03-13")),date_breaks= "2 weeks",date_labels = "%d %b")+
+  theme_classic()+
+  theme(axis.text.x=element_text(hjust=0.5, size=12),
+        plot.title = element_text(margin = margin(t = 10, b = -20), hjust=0.7),
+        panel.background= element_rect(fill=NA, color='black'),
+        axis.text.y = element_text(vjust=0.5, size=12), 
+        axis.title.x = element_text(vjust=0.5, size=12),
+        axis.title.y = element_text(vjust=0.5, size=12))
+        #legend.position = 'none')
+DHWsub
+```
+```{r}
+library(cowplot)
+tempsubboth<-plot_grid(tempsub,DHWsub,  ncol=2, align="h")  
+tempsubboth
+```
+
+```{r}
+temp<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/NOAA and in situ_24 hour temperature mean_ Heron Island from 2014.csv", strip.white=T)
+temp$Date<- as.Date(temp$Date, format = "%Y-%m-%d")
+temp$Where<- as.factor(temp$Where)
+#temp$Site<- as.factor(temp$Site)
+#temp$Date_Time <- as.POSIXct(BVPAR$Date_Time,tz="Etc/GMT-10",usetz=TRUE)
+temp
+```
+```{r}
+temp$Where <- factor(temp$Where, levels=c("Satellite","In situ"))
+temp$Date<- as.Date(as.POSIXct(temp$Date, origin="1970-01-01"))
+tempfig<-ggplot(temp, aes(y=Temperature, x=Date, color=Where))+
+  #geom_point()+
+  geom_line(size=1, alpha=0.8)+
+  #geom_ribbon(aes(ymin=Temperature-se, ymax=Temperature+se), alpha=0.4)+
+  scale_color_manual("Where", values=c("In situ"="paleturquoise3","Satellite"= "darkslategray"))+
+  geom_hline(yintercept = 27.3, linetype="solid", color = 'black', size=0.7, show.legend = TRUE)+
+  geom_hline(yintercept = 28.3, linetype="dashed", color = 'black', size=0.7, show.legend = TRUE)+
+  scale_x_date(limits=as.Date(c("2014-09-01","2020-08-31")),date_breaks = "1 year", date_labels = "%Y", expand=c(0.015,0.015))+
+  #facet_wrap(~Where, nrow=2)+
+  scale_y_continuous(expression(Temperature~(degree~C)), breaks=c(21,22.5,24,25.5,27,28.5,30), limits=c(20.5,30))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5,size=12),
+        plot.title = element_text(margin = margin(t = 10, b = 10), hjust=0.5),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.background = element_blank(), 
+        strip.text = element_blank(),
+        legend.title = element_blank(),
+        legend.position=c(0.15,0.85),
+        axis.text.y = element_text(vjust=0.5, size=12),  
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size=12))
+tempfig
+```
+```{r}
+DHWfig<-ggplot(temp, aes(y=DHW_from_90th_HS.1, x=Date, color=Where))+
+  geom_line(size=0.75,  alpha=0.8)+
+  geom_area(aes(fill=Where, x=Date), alpha=0.4) +
+  scale_color_manual("Where", values=c("In situ"="paleturquoise3","Satellite"= "darkslategray"))+
+  scale_fill_manual("Where", values=c("In situ"="paleturquoise3","Satellite"= "darkslategray"))+
+  scale_x_date(limits=as.Date(c("2014-09-01","2020-08-31")),date_breaks = "1 year", date_labels = "%Y", expand=c(0.015,0.015))+
+  scale_y_continuous(expression(Degree~heating~weeks), breaks=c(0.0,4.0,8.0,12), limits=c(0,14))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5,size=12),#angling the labels on the x-axis
+        plot.title = element_text(margin = margin(t = 10, b = 10), hjust=0.5),#telling it where to position our plot title
+        panel.background= element_rect(fill=NA, color='black'),#this is making the black box around the graph
+        #legend.position = c(0.15,0.3),
+        strip.background = element_blank(), 
+        strip.text = element_blank(),
+        legend.title = element_blank(),
+        legend.position=c(0.15,0.85),
+        axis.text.y = element_text(vjust=0.5, size=12), #making the axis text larger 
+        axis.title.x = element_blank(),#making the axis title larger 
+        axis.title.y = element_text(size=12))#making the axis title larger 
+DHWfig
+```
+
+```{r}
+library(cowplot)
+tempboth<-plot_grid(tempfig,DHWfig,  nrow=2, align="h")  
+tempboth
+```
+
