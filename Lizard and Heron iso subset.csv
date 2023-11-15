@@ -1,0 +1,153 @@
+Holobiont,Species,Time,Region,Treatment,Sample_ID,Nubbin_ID,host_d15N,host_d13C,host_CN_molar,sym_d15N,sym_d13C,sym_CN_molar
+PdamC33a_sGBR,Pocillopora,After,Heron,Adult,HA003,HA003,5.5,-17.1,5.4,,,
+PdamC. latusorum,Pocillopora,After,Heron,Adult,HA024,HA024,4.8,-14.8,5.7,,,
+PdamC. latusorum,Pocillopora,After,Heron,Adult,HA035,HA035,5,-16.1,6,,,
+C78a,Stylophora,After,Heron,Adult,HA050,HA050,5.4,-16.7,5.6,,,
+C78a,Stylophora,After,Heron,Adult,HA051,HA051,5.1,-15.7,5.3,,,
+C78a,Stylophora,After,Heron,Adult,HA066,HA066,5.3,-15.8,5.5,,,
+C8 groupH,Stylophora,After,Heron,Adult,HA067,HA067,4.6,-16.9,5.2,,,
+C8 groupH,Stylophora,After,Heron,Adult,HA068,HA068,5.8,-15.9,5.4,,,
+C78a,Stylophora,After,Heron,Adult,HA071,HA071,4.6,-15.8,5.5,,,
+C8 groupH,Stylophora,After,Heron,Adult,HA083,HA083,5.3,-15.3,5.4,,,
+C8 groupH,Stylophora,After,Heron,Adult,HA086,HA086,4,-15.9,5.4,,,
+PdamC33a_sGBR,Pocillopora,After,Heron,Juvenile,HJ003,HJ003,4.4,-15.3,5.9,,,
+PdamC. latusorum,Pocillopora,After,Heron,Juvenile,HJ008,HJ008,4.9,-17,5.5,,,
+C78a,Stylophora,After,Heron,Juvenile,HJ050,HJ050,4,-15.5,5.3,,,
+C78a,Stylophora,After,Heron,Juvenile,HJ051,HJ051,5.7,-17.5,5.3,,,
+C78a,Stylophora,After,Heron,Juvenile,HJ052,HJ052,,-16.6,6.3,,,
+C78a,Stylophora,After,Heron,Juvenile,HJ055,HJ055,4.5,-15.7,5.3,,,
+C78a,Stylophora,After,Heron,Juvenile,HJ065,HJ065,4.9,-17.1,5.6,,,
+C78a,Stylophora,After,Heron,Juvenile,HJ066,HJ066,4.6,-17,5.1,,,
+C78a,Stylophora,After,Heron,Juvenile,HJ067,HJ067,5.1,-16.4,5.3,,,
+C78a,Stylophora,After,Heron,Juvenile,HJ071,HJ071,4.1,-17.2,5.4,,,
+C8 groupH,Stylophora,After,Heron,Juvenile,HJ081,HJ081,4.4,-16.4,5.3,,,
+PdamC33a_sGBR,Pocillopora,Before,Heron,Adult,HA001,HA001,4.3,-16.5,5.5,,,
+PdamC33a_sGBR,Pocillopora,Before,Heron,Adult,HA004,HA004,4.7,-17.1,5.2,3,-17.4,7.7
+PdamC33a_sGBR,Pocillopora,Before,Heron,Adult,HA005,HA005,4.4,-16.2,5.1,3.5,-18.7,7.5
+PdamC33a_sGBR,Pocillopora,Before,Heron,Adult,HA017,HA017,4.4,-15.4,5.2,3.4,-16,6.4
+PdamC33a_sGBR,Pocillopora,Before,Heron,Adult,HA018,HA018,4.5,-19.1,5.4,3.9,-15.9,7.9
+PdamC33a_sGBR,Pocillopora,Before,Heron,Adult,HA019,HA019,4.3,-16.7,5.2,3.1,-16.3,7.5
+PdamC33a_sGBR,Pocillopora,Before,Heron,Adult,HA023,HA023,4.3,-16.5,5.3,3.9,-13.8,7.9
+PdamC33a_sGBR,Pocillopora,Before,Heron,Adult,HA034,HA034,4.7,-16.1,5.2,2.9,-15.8,8
+PdamC33a_sGBR,Pocillopora,Before,Heron,Adult,HA038,HA038,4.3,-17,5.2,2.7,-15.2,9.5
+PdamC33a_sGBR,Pocillopora,Before,Heron,Adult,HA039,HA039,5.1,-17.8,5.3,3.7,-18,6.8
+C78a,Stylophora,Before,Heron,Adult,HA050,HA050,4.3,-16,5.3,3.9,-18.4,7.2
+C78a,Stylophora,Before,Heron,Adult,HA051,HA051,5,-15.6,5.2,3.6,-15.6,6.9
+C78a,Stylophora,Before,Heron,Adult,HA053,HA053,4.4,-17.4,5.3,4.1,-17.2,7.2
+C78a,Stylophora,Before,Heron,Adult,HA066,HA066,4.1,-16.5,5.2,3.9,-16.6,5.9
+C8 groupH,Stylophora,Before,Heron,Adult,HA067,HA067,4.5,-17,5.1,3.7,-17.1,6.2
+C8 groupH,Stylophora,Before,Heron,Adult,HA068,HA068,5.2,-16,5.2,3,-15.8,6.5
+C78a,Stylophora,Before,Heron,Adult,HA071,HA071,4.6,-15.1,5.1,3.8,-16,6.7
+C8 groupH,Stylophora,Before,Heron,Adult,HA082,HA082,5.2,-16.1,5.2,,,
+C8 groupH,Stylophora,Before,Heron,Adult,HA083,HA083,4.9,-15.9,5.2,3.8,-15.6,6
+C8 groupH,Stylophora,Before,Heron,Adult,HA086,HA086,5.4,-16.7,5.4,3.7,-16.6,6.5
+C8 groupH,Stylophora,Before,Heron,Adult,HA087,HA087,4.8,-16.4,4.9,3.9,-16.2,6.2
+PdamC33a_sGBR,Pocillopora,Before,Heron,Juvenile,HJ001,HJ001,3.4,-16.8,5.3,0.4,-18.6,6.9
+PdamC33a_sGBR,Pocillopora,Before,Heron,Juvenile,HJ002,HJ002,4,-17.2,5.4,3.3,-17.4,7.3
+PdamC33a_sGBR,Pocillopora,Before,Heron,Juvenile,HJ003,HJ003,4.6,-15.6,5.4,,,
+PdamC. latusorum,Pocillopora,Before,Heron,Juvenile,HJ008,HJ008,3.9,-17.1,5.3,1.4,-17.6,8.2
+PdamC33a_sGBR,Pocillopora,Before,Heron,Juvenile,HJ017,HJ017,4.3,-15.7,5.4,,,
+PdamC33a_sGBR,Pocillopora,Before,Heron,Juvenile,HJ018,HJ018,4.2,-15.5,5.3,2.7,-15.8,7.7
+PdamC33a_sGBR,Pocillopora,Before,Heron,Juvenile,HJ020,HJ020,4.4,-17.1,5.4,3.8,-16.7,7.5
+PdamC33a_sGBR,Pocillopora,Before,Heron,Juvenile,HJ033,HJ033,5.1,-15.5,5.5,3,-16.2,8.1
+PdamC33a_sGBR,Pocillopora,Before,Heron,Juvenile,HJ036,HJ036,4.9,-15.6,5.5,,,
+PdamC33a_sGBR,Pocillopora,Before,Heron,Juvenile,HJ037,HJ037,4.9,-18.1,5.4,2,-18.3,7.2
+PdamC33a_sGBR,Pocillopora,Before,Heron,Juvenile,HJ038,HJ038,4.9,-15.4,5.5,3.2,-16.2,7
+C78a,Stylophora,Before,Heron,Juvenile,HJ049,HJ049,4.9,-15.8,5.1,3.6,-16.3,6.8
+C78a,Stylophora,Before,Heron,Juvenile,HJ050,HJ050,4.2,-15.6,5,3.9,-15.7,6.4
+C78a,Stylophora,Before,Heron,Juvenile,HJ053,HJ053,5.4,-16.7,5.3,2.9,-16,7
+C78a,Stylophora,Before,Heron,Juvenile,HJ055,HJ055,4.1,-16.9,5.4,3.2,-17.1,6.5
+C78a,Stylophora,Before,Heron,Juvenile,HJ065,HJ065,4.7,-16.3,5.2,3.6,-16,6.9
+C78a,Stylophora,Before,Heron,Juvenile,HJ066,HJ066,4.4,-15.7,5.2,4.2,-16.4,6.8
+C78a,Stylophora,Before,Heron,Juvenile,HJ067,HJ067,4.6,-15.5,5.3,4.1,-15.5,5.9
+C78a,Stylophora,Before,Heron,Juvenile,HJ071,HJ071,4.5,-16.1,5.3,3.7,-16.6,6.2
+C78a,Stylophora,Before,Heron,Juvenile,HJ088,HJ088,5.1,-16,5.2,4.2,-15.7,6.1
+Pver(OPI40)C. pacificum,Pocillopora,Before,Lizard,Adult,LA003,LA003,4,-18.6,4.9,3.4,-17.2,6.9
+Pver_PbairdiC. pacificum,Pocillopora,Before,Lizard,Adult,LA004,LA004,4.6,-16.3,5.3,2.8,-15.8,7
+Pver(OPI40)C. pacificum,Pocillopora,Before,Lizard,Adult,LA006,LA006,3.8,-15.7,5.1,,,
+Pver(OPI40)C. pacificum,Pocillopora,Before,Lizard,Adult,LA008,LA008,4.1,-15.9,5.3,3.5,-14.9,6.8
+Pver_PbairdiC. pacificum,Pocillopora,Before,Lizard,Adult,LA013,LA013,3.9,-16.6,5.5,,,
+Pver_PbairdiC. pacificum,Pocillopora,Before,Lizard,Adult,LA018,LA018,4.5,-16,5.4,3,-15.6,7.4
+Pver_PbairdiC. pacificum,Pocillopora,Before,Lizard,Adult,LA019,LA019,4.1,-15.2,5,,,
+Pver(OPI40)C. pacificum,Pocillopora,Before,Lizard,Adult,LA020,LA020,4.2,-15.5,5.5,,,
+Pver(OPI40)C. pacificum,Pocillopora,Before,Lizard,Adult,LA025,LA025,4.2,-15.8,5.5,3,-15.2,7.1
+Pver_PbairdiC. pacificum,Pocillopora,Before,Lizard,Adult,LA027,LA027,4.3,-15.8,5.5,2.8,-15.2,6.8
+Pver_PbairdiC. pacificum,Pocillopora,Before,Lizard,Adult,LA028,LA028,4,-17.1,5.7,3.4,-16.8,6.4
+Pver_PbairdiC. pacificum,Pocillopora,Before,Lizard,Adult,LA029,LA029,4,-14.5,5.3,2.4,-14,7
+C8 group,Stylophora,Before,Lizard,Adult,LA052,LA052,3.4,-16.1,5.5,3.3,-15.9,6.3
+C8 group,Stylophora,Before,Lizard,Adult,LA053,LA053,3.5,-15.8,5.8,1.8,-15.3,6.9
+C8 group,Stylophora,Before,Lizard,Adult,LA055,LA055,3.8,-16,5.4,2.2,-15.6,7.3
+C8 group,Stylophora,Before,Lizard,Adult,LA056,LA056,3.5,-15.7,5.7,2.7,-15.6,6.6
+C8 group,Stylophora,Before,Lizard,Adult,LA065,LA065,3.6,-16.4,5.6,3.4,-16.3,5.6
+C8 group,Stylophora,Before,Lizard,Adult,LA066,LA066,3.9,-16.4,5.6,3.3,-16,5.6
+C8 group,Stylophora,Before,Lizard,Adult,LA070,LA070,3.7,-15.7,5.5,3,-15.7,5.9
+C8 group,Stylophora,Before,Lizard,Adult,LA071,LA071,3.2,-16.4,5.9,2.8,-16.9,5.9
+C8 group,Stylophora,Before,Lizard,Adult,LA082,LA082,3.9,-15.7,5.6,3,-14.9,8.2
+C8 group,Stylophora,Before,Lizard,Adult,LA083,LA083,5,-16.1,5.2,3.4,-15.1,8.2
+C8 group,Stylophora,Before,Lizard,Adult,LA086,LA086,3.3,-15.8,5.7,2.2,-15.1,7.4
+C8 group,Stylophora,Before,Lizard,Adult,LA088,LA088,3.7,-15.7,5.4,3.2,-14.9,8.2
+Pver(OPI40)C. pacificum,Pocillopora,Before,Lizard,Juvenile,LJ001,LJ001,3.9,-16.3,5.2,3.2,-15.6,4.5
+Pver_PbairdiC. pacificum,Pocillopora,Before,Lizard,Juvenile,LJ002,LJ002,3.5,-16.6,5.2,2.9,-16.7,5.9
+Pver(OPI40)C. pacificum,Pocillopora,Before,Lizard,Juvenile,LJ003,LJ003,3.9,-14.8,5.5,,,
+Pver_PbairdiC. pacificum,Pocillopora,Before,Lizard,Juvenile,LJ004,LJ004,3.5,-16.1,6,3.2,-16,5.5
+Pver(OPI40)C. pacificum,Pocillopora,Before,Lizard,Juvenile,LJ013,LJ013,3.9,-16.5,5.9,2.5,-16.1,7.6
+PacutaC. pacificum,Pocillopora,Before,Lizard,Juvenile,LJ017,LJ017,3.3,-15.8,5.5,1.9,-16,5.8
+PacutaC. pacificum,Pocillopora,Before,Lizard,Juvenile,LJ020,LJ020,3.2,-16.6,5.7,3.7,-16.3,6.7
+PacutaC. pacificum,Pocillopora,Before,Lizard,Juvenile,LJ025,LJ025,4.6,-17.8,5.8,3.6,-16.4,7
+Pver(OPI40)C. pacificum,Pocillopora,Before,Lizard,Juvenile,LJ026,LJ026,3.7,-16.2,6.3,0.2,-16,6.1
+Pver_PbairdiC. pacificum,Pocillopora,Before,Lizard,Juvenile,LJ027,LJ027,3.5,-15.8,6,3,-15.5,6.3
+Pver_PbairdiC. pacificum,Pocillopora,Before,Lizard,Juvenile,LJ029,LJ029,3.7,-15.7,5.9,3,-15.3,6.3
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ050,LJ050,3.4,-17.3,5.9,2.7,-17.1,6.5
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ052,LJ052,3.4,-16.2,5.7,2.9,-15.7,7.3
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ053,LJ053,3.6,-18,5.7,3.1,-17.5,7.1
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ056,LJ056,4,-17.1,5.1,2.9,-15.9,7.4
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ065,LJ065,4,-17,5.4,2.6,-15.6,6.6
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ068,LJ068,3.4,-16.4,5.7,3.2,-16.1,6.1
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ069,LJ069,3.5,-16.8,6,3,-16.9,6.7
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ070,LJ070,3.4,-17.1,6,2.8,-16.7,6.7
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ081,LJ081,2.9,-15.8,5.6,3.2,-14.9,6.7
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ082,LJ082,3.1,-16.7,5.8,1.5,-16,6.7
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ086,LJ086,3.3,-16.3,5.7,3,-15.3,10.4
+C8 group,Stylophora,Before,Lizard,Juvenile,LJ088,LJ088,3.6,-15.3,5.4,2.9,-14.7,7.3
+Pver_PbairdiC. pacificum,Pocillopora,During,Lizard,Adult,LA004,LA004,4.1,-16.4,5.8,,,
+Pver(OPI40)C. pacificum,Pocillopora,During,Lizard,Adult,LA006,LA006,3.9,-14.8,5.5,,,
+Pver_PbairdiC. pacificum,Pocillopora,During,Lizard,Adult,LA018,LA018,3.8,-15.6,6,,,
+Pver_PbairdiC. pacificum,Pocillopora,During,Lizard,Adult,LA019,LA019,3.8,-15.7,5.8,,,
+Pver(OPI40)C. pacificum,Pocillopora,During,Lizard,Adult,LA025,LA025,4.4,-15.7,5.6,,,
+Pver_PbairdiC. pacificum,Pocillopora,During,Lizard,Adult,LA027,LA027,3.8,-14.9,6.3,,,
+Pver_PbairdiC. pacificum,Pocillopora,During,Lizard,Adult,LA028,LA028,3.8,-16.5,5.9,,,
+Pver_PbairdiC. pacificum,Pocillopora,During,Lizard,Adult,LA029,LA029,4.2,-16.3,5.7,,,
+C8 group,Stylophora,During,Lizard,Adult,LA052,LA052,3.8,-15.2,5.6,,,
+C8 group,Stylophora,During,Lizard,Adult,LA053,LA053,3.9,-14.8,5.2,,,
+C8 group,Stylophora,During,Lizard,Adult,LA055,LA055,4.1,-14.8,5.4,,,
+C8 group,Stylophora,During,Lizard,Adult,LA056,LA056,4,-14.5,5.3,,,
+C8 group,Stylophora,During,Lizard,Adult,LA065,LA065,3.6,-15.1,5.2,,,
+C8 group,Stylophora,During,Lizard,Adult,LA066,LA066,3.4,-14.5,6,,,
+C8 group,Stylophora,During,Lizard,Adult,LA070,LA070,3.6,-15.2,5.5,,,
+C8 group,Stylophora,During,Lizard,Adult,LA071,LA071,4.3,-14.9,5.6,,,
+C8 group,Stylophora,During,Lizard,Adult,LA082,LA082,4.1,-14.3,6,,,
+C8 group,Stylophora,During,Lizard,Adult,LA083,LA083,3.8,-15.4,5.3,,,
+C8 group,Stylophora,During,Lizard,Adult,LA086,LA086,3.4,-14.8,5.3,,,
+C8 group,Stylophora,During,Lizard,Adult,LA088,LA088,4.2,-14.5,5.6,,,
+Pver(OPI40)C. pacificum,Pocillopora,During,Lizard,Juvenile,LJ001,LJ001,3.4,-15.8,6.3,,,
+Pver_PbairdiC. pacificum,Pocillopora,During,Lizard,Juvenile,LJ002,LJ002,3.5,-16.4,5.7,,,
+Pver_PbairdiC. pacificum,Pocillopora,During,Lizard,Juvenile,LJ004,LJ004,4,-16.3,5.7,,,
+Pver(OPI40)C. pacificum,Pocillopora,During,Lizard,Juvenile,LJ013,LJ013,4.1,-16.2,5.5,,,
+PacutaC. pacificum,Pocillopora,During,Lizard,Juvenile,LJ017,LJ017,3.4,-15.1,5.4,,,
+PacutaC. pacificum,Pocillopora,During,Lizard,Juvenile,LJ020,LJ020,4,-14.8,5.7,,,
+PacutaC. pacificum,Pocillopora,During,Lizard,Juvenile,LJ025,LJ025,3.6,-17.2,5.5,,,
+Pver(OPI40)C. pacificum,Pocillopora,During,Lizard,Juvenile,LJ026,LJ026,,-20,5.7,,,
+Pver_PbairdiC. pacificum,Pocillopora,During,Lizard,Juvenile,LJ027,LJ027,3.9,-15.8,5.6,,,
+Pver_PbairdiC. pacificum,Pocillopora,During,Lizard,Juvenile,LJ029,LJ029,3.7,-16.1,5.7,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ050,LJ050,4.1,-16.1,5.9,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ052,LJ052,4,-15.7,5.4,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ053,LJ053,4,-16.7,5.4,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ056,LJ056,3.8,-15.3,5.5,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ065,LJ065,3.8,-15,5.2,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ068,LJ068,3.5,-15.2,5.2,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ069,LJ069,3.7,-15.4,5.4,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ070,LJ070,4,-15.9,5.7,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ081,LJ081,3.6,-14.7,5.5,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ082,LJ082,4.1,-15.4,5.3,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ086,LJ086,3.4,-15.3,5.2,,,
+C8 group,Stylophora,During,Lizard,Juvenile,LJ088,LJ088,3.6,-15.7,5.5,,,

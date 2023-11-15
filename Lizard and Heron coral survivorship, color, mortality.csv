@@ -1,0 +1,385 @@
+Region,Site,Species,Treatment,Nubbin ID,Rack..,Survival,Percentage.dead,Color1,Color2,Color.Average,Y,,Symbiont.ID,SymbiontID_KB,Coral.ID,CoralID_KB,Holobiont
+Heron,Harry's Bommie,Pocillopora,Adult,HA001,4,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Adult,HA002,3,0,100,,,,,,C33a*,C33,Pnew (rel Pdam),Pdam,Pnew (rel Pdam)C33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Adult,HA003,6,1,5,5,6,5.5,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Adult,HA004,3,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Adult,HA005,5,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Adult,HA006,6,0,100,,,,,,C33a,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Adult,HA007,2,0,100,,,,,,C33a,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Adult,HA008,5,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Adult,HA009,3,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Adult,HA010,6,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Adult,HA011,1,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Adult,HA012,1,1,98,2,,2,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Adult,HA013,1,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Adult,HA014,2,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Adult,HA015,2,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Adult,HA016,4,,,,,,,MISSING,,,,,
+Heron,Coral Canyons,Pocillopora,Adult,HA017,10,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Adult,HA018,8,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Adult,HA019,9,0,100,,,,,,C33a,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Adult,HA020,11,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Adult,HA021,16,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Adult,HA022,12,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Adult,HA023,7,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Adult,HA024,11,1,55,2,2,2,,,"C1b-c, 42a",C1,Pdam,Pdam,PdamC. latusorum
+Heron,Coral Canyons,Pocillopora,Adult,HA025,,,,,,,missing,,,,,,
+Heron,Coral Canyons,Pocillopora,Adult,HA026,11,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Adult,HA027,10,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Adult,HA028,12,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Adult,HA029,10,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Adult,HA030,12,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Adult,HA031,8,0,100,,,,,,,,,,
+Heron,Coral Canyons,Stylophora,Adult,HA032,9,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Adult,HA033,13,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Adult,HA034,,,,,,,missing,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Adult,HA035,16,1,7,2,5,3.5,,,,,Pdam,Pdam,Pdam
+Heron,Pam's Point,Pocillopora,Adult,HA036,15,0,100,,,,,,C33a*,C33,Pnew (rel Pdam),Pdam,Pnew (rel Pdam)C33a_sGBR
+Heron,Pam's Point,Pocillopora,Adult,HA037,15,0,100,,,,,,"C1b-c,j, 42a",C1,Pdam,Pdam,PdamC. latusorum
+Heron,Pam's Point,Pocillopora,Adult,HA038,17,0,100,,,,,,C33a,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Adult,HA039,15,0,100,,,,,,C33a,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Adult,HA040,14,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Adult,HA041,18,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Adult,HA042,15,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Adult,HA043,16,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Adult,HA044,13,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Adult,HA045,14,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Adult,HA046,13,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Adult,HA047,18,1,3,2,3,2.5,,,,,,,
+Heron,Pam's Point,Pocillopora,Adult,HA048,17,1,10,3,3,3,,,,,,,
+Heron,Harry's Bommie,Stylophora,Adult,HA049,3,0,100,,,,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Adult,HA050,6,1,7,5,6,5.5,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Adult,HA051,4,1,5,5,4,4.5,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Adult,HA052,1,1,5,4,4,4,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Adult,HA053,4,0,100,,,,,,C35a,C35,,C35,C35a group
+Heron,Harry's Bommie,Stylophora,Adult,HA054,5,0,100,,,,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Adult,HA055,2,1,45,4,2,3,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Adult,HA056,3,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Stylophora,Adult,HA057,1,1,5,5,4,4.5,,,,,,,
+Heron,Harry's Bommie,Stylophora,Adult,HA058,4,1,92,4,,4,,,,,,,
+Heron,Harry's Bommie,Stylophora,Adult,HA059,2,1,7,4,4,4,,,,,,,
+Heron,Harry's Bommie,Stylophora,Adult,HA060,4,1,40,2,4,3,,,,,,,
+Heron,Harry's Bommie,Stylophora,Adult,HA061,4,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Stylophora,Adult,HA062,6,1,55,3,2,2.5,,,,,,,
+Heron,Harry's Bommie,Stylophora,Adult,HA063,1,1,3,5,4,4.5,,,,,,,
+Heron,Harry's Bommie,Stylophora,Adult,HA064,2,0,100,,,,,,,,,,
+Heron,Coral Canyons,Stylophora,Adult,HA065,8,1,40,3,2,2.5,,,C78a,C78,,C78,C78a
+Heron,Coral Canyons,Stylophora,Adult,HA066,11,1,22,4,2,3,,,C78a,C78,,C78,C78a
+Heron,Coral Canyons,Stylophora,Adult,HA067,11,1,13,3,3,3,,,C8a,C8,,C8,C8 group
+Heron,Coral Canyons,Stylophora,Adult,HA068,7,1,12,4,5,4.5,,,C8a,C8,,C8,C8 group
+Heron,Coral Canyons,Stylophora,Adult,HA069,7,0,100,,,,,,C35a+,C35,,C35,C35a group
+Heron,Coral Canyons,Stylophora,Adult,HA070,10,0,100,,,,,,C35a,C35,,C35,C35a group
+Heron,Coral Canyons,Stylophora,Adult,HA071,12,1,70,3,3,3,,,C78a,C78,,C78,C78a
+Heron,Coral Canyons,Stylophora,Adult,HA072,10,1,80,2,,2,,,,,,,
+Heron,Coral Canyons,Stylophora,Adult,HA073,7,1,70,2,,2,,,,,,,
+Heron,Coral Canyons,Stylophora,Adult,HA074,9,0,100,,,,,,,,,,
+Heron,Coral Canyons,Stylophora,Adult,HA075,11,0,100,,,,,,,,,,
+Heron,Coral Canyons,Stylophora,Adult,HA076,10,0,100,,,,,,,,,,
+Heron,Coral Canyons,Stylophora,Adult,HA077,12,1,9,4,3,3.5,,,,,,,
+Heron,Coral Canyons,Stylophora,Adult,HA078,7,1,5,2,2,2,,,,,,,
+Heron,Coral Canyons,Stylophora,Adult,HA079,9,0,100,,,,,,,,,,
+Heron,Coral Canyons,Stylophora,Adult,HA080,9,1,35,3,4,3.5,,,,,,,
+Heron,Pam's Point,Stylophora,Adult,HA081,16,0,100,,,,,,C8a,C8,,C8,C8 group
+Heron,Pam's Point,Stylophora,Adult,HA082,15,1,15,5,3,4,,,C8a,C8,,C8,C8 group
+Heron,Pam's Point,Stylophora,Adult,HA083,16,1,65,2,2,2,,,C8a,C8,,C8,C8 group
+Heron,Pam's Point,Stylophora,Adult,HA084,13,0,100,,,,,,C8a,C8,,C8,C8 group
+Heron,Pam's Point,Stylophora,Adult,HA085,13,0,100,,,,,,C8a,C8,,C8,C8 group
+Heron,Pam's Point,Stylophora,Adult,HA086,13,1,50,3,2,2.5,,,C8a,C8,,C8,C8 group
+Heron,Pam's Point,Stylophora,Adult,HA087,18,0,100,,,,,,C8a,C8,,C8,C8 group
+Heron,Pam's Point,Stylophora,Adult,HA088,18,1,35,4,3,3.5,,,C8a,C8,,C8,C8 group
+Heron,Pam's Point,Stylophora,Adult,HA089,14,0,100,,,,,,,,,,
+Heron,Pam's Point,Stylophora,Adult,HA090,14,1,25,4,3,3.5,,,,,,,
+Heron,Pam's Point,Stylophora,Adult,HA091,18,0,100,,,,,,,,,,
+Heron,Pam's Point,Stylophora,Adult,HA092,13,1,87,4,4,4,,,,,,,
+Heron,Pam's Point,Stylophora,Adult,HA093,14,1,20,4,3,3.5,,,,,,,
+Heron,Pam's Point,Stylophora,Adult,HA094,18,1,40,4,2,3,,,,,,,
+Heron,Pam's Point,Stylophora,Adult,HA095,14,0,100,,,,,,,,,,
+Heron,Pam's Point,Stylophora,Adult,HA096,13,1,15,4,3,3.5,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ001,4,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ002,5,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ003,3,1,35,5,4,4.5,,,C33a,C33,Pdam,Pdam,PdamC. latusorum
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ004,6,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ005,3,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ006,4,0,100,,,,,,C1b-c,C1,Pdam,Pdam,PdamC. latusorum
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ007,1,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ008,5,1,10,2,3,2.5,,,C1b-c,C1,Pdam,Pdam,PdamC. latusorum
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ009,5,1,40,4,4,4,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ010,2,1,7,4,2,3,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ011,2,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ012,2,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ013,6,1,65,2,3,2.5,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ014,1,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ015,4,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Pocillopora,Juvenile,HJ016,3,1,10,5,5,5,,,,,,,
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ017,9,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ018,12,0,100,,,,,,C33a,C33,Pdam,Pdam,PdamC. latusorum
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ019,7,0,100,,,,,,C33a,C33,Pnew (rel Pdam),Pdam,Pnew (rel Pdam)C33a_sGBR
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ020,9,0,100,,,,,,C33a,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ021,7,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ022,9,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ023,9,0,100,,,,,,C33a,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ024,11,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ025,10,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ026,7,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ027,8,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ028,12,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ029,8,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ030,11,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ031,7,0,100,,,,,,,,,,
+Heron,Coral Canyons,Pocillopora,Juvenile,HJ032,8,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Juvenile,HJ033,16,0,100,,,,,,C33a,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Juvenile,HJ034,14,0,100,,,,,,C33a,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Juvenile,HJ035,14,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Juvenile,HJ036,17,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Juvenile,HJ037,16,0,100,,,,,,C33a,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Juvenile,HJ038,14,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Juvenile,HJ039,18,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Juvenile,HJ040,18,0,100,,,,,,C33a*,C33,Pdam,Pdam,PdamC33a_sGBR
+Heron,Pam's Point,Pocillopora,Juvenile,HJ041,15,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Juvenile,HJ042,17,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Juvenile,HJ043,16,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Juvenile,HJ044,13,1,95,2,2,2,,,,,,,
+Heron,Pam's Point,Pocillopora,Juvenile,HJ045,18,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Juvenile,HJ046,13,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Juvenile,HJ047,15,0,100,,,,,,,,,,
+Heron,Pam's Point,Pocillopora,Juvenile,HJ048,17,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ049,4,0,100,,,,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ050,3,1,7,5,5,5,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ051,1,1,10,4,3,3.5,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ052,5,1,75,2,2,2,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ053,1,1,5,2,4,3,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ054,2,0,100,,,,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ055,5,1,17,5,4,4.5,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ056,1,1,10,4,2,3,,,C78a,C78,,C78,C78a
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ057,6,1,12,3,4,3.5,,,,,,,
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ058,6,1,3,5,4,4.5,,,,,,,
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ059,6,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ060,5,1,7,4,5,4.5,,,,,,,
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ061,2,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ062,3,0,100,,,,,,,,,,
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ063,3,1,60,5,4,4.5,,,,,,,
+Heron,Harry's Bommie,Stylophora,Juvenile,HJ064,5,1,20,2,3,2.5,,,,,,,
+Heron,Coral Canyons,Stylophora,Juvenile,HJ065,8,1,7,2,2,2,,,C78a,C78,,C78,C78a
+Heron,Coral Canyons,Stylophora,Juvenile,HJ066,8,1,5,3,4,3.5,,,C78a,C78,,C78,C78a
+Heron,Coral Canyons,Stylophora,Juvenile,HJ067,8,1,5,4,4,4,,,C78a,C78,,C78,C78a
+Heron,Coral Canyons,Stylophora,Juvenile,HJ068,12,1,60,3,,3,,,C78a,C78,,C78,C78a
+Heron,Coral Canyons,Stylophora,Juvenile,HJ069,11,1,20,3,2,2.5,,,C78a,C78,,C78,C78a
+Heron,Coral Canyons,Stylophora,Juvenile,HJ070,9,1,98,2,,2,,,C78a,C78,,C78,C78a
+Heron,Coral Canyons,Stylophora,Juvenile,HJ071,10,1,7,4,2,3,,,C78a,C78,,C78,C78a
+Heron,Coral Canyons,Stylophora,Juvenile,HJ072,11,0,100,,,,,,C8a,C8,,C8,C8 group
+Heron,Coral Canyons,Stylophora,Juvenile,HJ073,12,0,100,,,,,,,,,,
+Heron,Coral Canyons,Stylophora,Juvenile,HJ074,10,1,50,4,,4,,,,,,,
+Heron,Coral Canyons,Stylophora,Juvenile,HJ075,12,0,100,,,,,,,,,,
+Heron,Coral Canyons,Stylophora,Juvenile,HJ076,7,,,,,,,missing,,,,,
+Heron,Coral Canyons,Stylophora,Juvenile,HJ077,9,1,99,2,,2,,,,,,,
+Heron,Coral Canyons,Stylophora,Juvenile,HJ078,7,1,40,3,2,2.5,,,,,,,
+Heron,Coral Canyons,Stylophora,Juvenile,HJ079,11,1,7,3,2,2.5,,,,,,,
+Heron,Coral Canyons,Stylophora,Juvenile,HJ080,9,0,100,,,,,,,,,,
+Heron,Pam's Point,Stylophora,Juvenile,HJ081,17,1,40,3,3,3,,,C8a,C8,,C8,C8 group
+Heron,Pam's Point,Stylophora,Juvenile,HJ082,15,0,100,,,,,,C35a,C35,,C35,C35a group
+Heron,Pam's Point,Stylophora,Juvenile,HJ083,14,0,100,,,,,,C35a?,C35,,C35,C35a group
+Heron,Pam's Point,Stylophora,Juvenile,HJ084,15,0,100,,,,,,C35a,C35,,C35,C35a group
+Heron,Pam's Point,Stylophora,Juvenile,HJ085,16,0,100,,,,,,C35a,C35,,C35,C35a group
+Heron,Pam's Point,Stylophora,Juvenile,HJ086,17,0,100,,,,,,C35a+,C35,,C35,C35a group
+Heron,Pam's Point,Stylophora,Juvenile,HJ087,15,0,100,,,,,,C35a,C35,,C35,C35a group
+Heron,Pam's Point,Stylophora,Juvenile,HJ088,15,0,100,,,,,,C78a,C78,,C78,C78a
+Heron,Pam's Point,Stylophora,Juvenile,HJ089,14,0,100,,,,,,,,,,
+Heron,Pam's Point,Stylophora,Juvenile,HJ090,18,0,100,,,,,,,,,,
+Heron,Pam's Point,Stylophora,Juvenile,HJ091,17,0,100,,,,,,,,,,
+Heron,Pam's Point,Stylophora,Juvenile,HJ092,16,0,100,,,,,,,,,,
+Heron,Pam's Point,Stylophora,Juvenile,HJ093,17,0,100,,,,,,,,,,
+Heron,Pam's Point,Stylophora,Juvenile,HJ094,13,0,100,,,,,,,,,,
+Heron,Pam's Point,Stylophora,Juvenile,HJ095,17,0,100,,,,,,,,,,
+Heron,Pam's Point,Stylophora,Juvenile,HJ096,15,0,100,,,,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Adult,LA001,2,1,0,4,4,4,,,C1cdt,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Granite Bluff,Pocillopora,Adult,LA002,11,0,100,,,,,,C1cdt,C1,Pnew (no rel),new,Pnew (rel Pbairdi)C. pacificum
+Lizard,Granite Bluff,Pocillopora,Adult,LA003,11,0,100,,,,,,C1cdt,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Granite Bluff,Pocillopora,Adult,LA004,10,1,0,4,5,4.5,,,C1cdt,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Granite Bluff,Pocillopora,Adult,LA005,2,0,100,,,,,,C1cdt,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC.pacificum (mix with C.latusorum)
+Lizard,Granite Bluff,Pocillopora,Adult,LA006,10,1,0,5,5,5,,,C1cdt,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Granite Bluff,Pocillopora,Adult,LA007,11,1,0,5,4,4.5,,,C1cdt,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Granite Bluff,Pocillopora,Adult,LA008,10,1,0,6,5,5.5,,,C1c,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Granite Bluff,Pocillopora,Adult,LA009,11,0,100,,,,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Adult,LA010,10,1,0,2,3,2.5,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Adult,LA011,10,1,0,3,3,3,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Adult,LA012,18,1,0,4,5,4.5,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Adult,LA013,13,1,0,4,3,3.5,,,C1c,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Big Vicki's,Pocillopora,Adult,LA014,2,1,0,4,4,4,,,C1c,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Big Vicki's,Pocillopora,Adult,LA015,17,1,0,3,4,3.5,,,C1c,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Big Vicki's,Pocillopora,Adult,LA016,13,1,0,5,3,4,,,C1c,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Big Vicki's,Pocillopora,Adult,LA017,10,1,2,4,5,4.5,,,C1c,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Big Vicki's,Pocillopora,Adult,LA018,13,1,0,4,3,3.5,,,C1c,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Big Vicki's,Pocillopora,Adult,LA019,13,1,0,4,4,4,,,C1c,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Big Vicki's,Pocillopora,Adult,LA020,8,1,0,6,5,5.5,,,C1c,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Big Vicki's,Pocillopora,Adult,LA021,4,1,0,4,3,3.5,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Adult,LA022,3,0,100,,,,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Adult,LA023,3,0,100,,,,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Adult,LA024,3,1,5,5,5,5,,,,,,,
+Lizard,Turtle South,Pocillopora,Adult,LA025,16,1,0,5,5,5,,,C1cd,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Turtle South,Pocillopora,Adult,LA026,16,0,100,,,,,,C1cd,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Turtle South,Pocillopora,Adult,LA027,9,1,3,5,5,5,,,C1cd,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Turtle South,Pocillopora,Adult,LA028,16,1,0,4,5,4.5,,,C1cd,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Turtle South,Pocillopora,Adult,LA029,16,1,0,4,3,3.5,,,C1cd,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Turtle South,Pocillopora,Adult,LA030,16,1,0,4,3,3.5,,,C1cd,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Turtle South,Pocillopora,Adult,LA031,9,1,45,4,2,3,,,C1cd,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Turtle South,Pocillopora,Adult,LA032,6,0,100,,,,,,,,Pnew (rel to Pver_OPI),Pver,Pnew (rel Pbairdi)C. pacificum
+Lizard,Turtle South,Pocillopora,Adult,LA033,12,1,7,3,3,3,,,,,,,
+Lizard,Turtle South,Pocillopora,Adult,LA034,5,1,0,4,4,4,,,,,,,
+Lizard,Turtle South,Pocillopora,Adult,LA035,6,1,0,4,4,4,,,,,,,
+Lizard,Turtle South,Pocillopora,Adult,LA036,5,1,0,4,4,4,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Adult,LA037,13,1,0,2,4,3,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Adult,LA038,11,1,45,4,3,3.5,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Adult,LA039,11,1,0,4,4,4,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Adult,LA040,13,1,0,2,2,2,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Adult,LA041,8,1,95,2,2,2,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Adult,LA042,8,0,100,,,,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Adult,LA043,3,1,3,6,5,5.5,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Adult,LA044,3,1,25,4,4,4,,,,,,,
+Lizard,Turtle South,Pocillopora,Adult,LA045,12,1,0,5,4,4.5,,,,,,,
+Lizard,Turtle South,Pocillopora,Adult,LA046,12,1,0,2,3,2.5,,,,,,,
+Lizard,Turtle South,Pocillopora,Adult,LA047,9,1,7,5,4,4.5,,,,,,,
+Lizard,Turtle South,Pocillopora,Adult,LA048,7,1,0,6,4,5,,,,,,,
+Lizard,Granite Bluff,Stylophora,Adult,LA049,18,1,5,1,4,2.5,,,C8b,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Adult,LA050,17,1,3,4,2,3,,,C8b,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Adult,LA051,11,1,2,4,1,2.5,,,C8b,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Adult,LA052,18,1,0,2,4,3,,,C8b,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Adult,LA053,11,1,0,4,1,2.5,,,C8x,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Adult,LA054,11,1,0,4,1,2.5,,,C8b,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Adult,LA055,18,1,0,1,4,2.5,,,C8b,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Adult,LA056,11,1,15,4,1,2.5,,,C8b,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Adult,LA057,11,1,10,4,2,3,,,,,,,
+Lizard,Granite Bluff,Stylophora,Adult,LA058,2,1,3,4,1,2.5,,,,,,,
+Lizard,Granite Bluff,Stylophora,Adult,LA059,8,1,10,3,2,2.5,,,,,,,
+Lizard,Granite Bluff,Stylophora,Adult,LA060,11,1,5,3,1,2,,,,,,,
+Lizard,Granite Bluff,Stylophora,Adult,LA061,10,1,3,4,3,3.5,,,,,,,
+Lizard,Granite Bluff,Stylophora,Adult,LA062,18,1,2,4,2,3,,,,,,,
+Lizard,Granite Bluff,Stylophora,Adult,LA063,8,1,5,4,1,2.5,,,,,,,
+Lizard,Granite Bluff,Stylophora,Adult,LA064,8,1,3,4,1,2.5,,,,,,,
+Lizard,Big Vicki's,Stylophora,Adult,LA065,3,1,0,2,2,2,,,C8b,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Adult,LA066,8,1,15,3,2,2.5,,,C8x,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Adult,LA067,3,1,0,3,3,3,,,C8b,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Adult,LA068,14,1,5,3,2,2.5,,,C8x,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Adult,LA069,3,1,3,2,2,2,,,C8x,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Adult,LA070,8,1,5,4,3,3.5,,,C8b,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Adult,LA071,3,1,30,3,3,3,,,C8x,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Adult,LA072,4,1,55,1,3,2,,,C8x,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Adult,LA073,15,1,2,4,3,3.5,,,,,,,
+Lizard,Big Vicki's,Stylophora,Adult,LA074,14,1,25,4,2,3,,,,,,,
+Lizard,Big Vicki's,Stylophora,Adult,LA075,7,1,5,3,4,3.5,,,,,,,
+Lizard,Big Vicki's,Stylophora,Adult,LA076,16,1,10,3,4,3.5,,,,,,,
+Lizard,Big Vicki's,Stylophora,Adult,LA077,16,1,7,2,3,2.5,,,,,,,
+Lizard,Big Vicki's,Stylophora,Adult,LA078,15,1,0,2,4,3,,,,,,,
+Lizard,Big Vicki's,Stylophora,Adult,LA079,16,1,7,2,4,3,,,,,,,
+Lizard,Big Vicki's,Stylophora,Adult,LA080,15,1,2,6,2,4,,,,,,,
+Lizard,Turtle South,Stylophora,Adult,LA081,12,1,0,4,2,3,,,C8b,C8,,C8,C8 group
+Lizard,Turtle South,Stylophora,Adult,LA082,5,1,0,2,4,3,,,C8b,C8,,C8,C8 group
+Lizard,Turtle South,Stylophora,Adult,LA083,12,1,0,3,2,2.5,,,C8b,C8,,C8,C8 group
+Lizard,Turtle South,Stylophora,Adult,LA084,1,1,0,4,1,2.5,,,C8b,C8,,C8,C8 group
+Lizard,Turtle South,Stylophora,Adult,LA085,6,1,5,4,2,3,,,C8b,C8,,C8,C8 group
+Lizard,Turtle South,Stylophora,Adult,LA086,5,1,0,2,2,2,,,C8b,C8,,C8,C8 group
+Lizard,Turtle South,Stylophora,Adult,LA087,12,1,15,4,1,2.5,,,C8b,C8,,C8,C8 group
+Lizard,Turtle South,Stylophora,Adult,LA088,5,1,5,3,2,2.5,,,C8b,C8,,C8,C8 group
+Lizard,Turtle South,Stylophora,Adult,LA089,5,1,0,2,3,2.5,,,,,,,
+Lizard,Turtle South,Stylophora,Adult,LA090,5,1,0,4,3,3.5,,,,,,,
+Lizard,Turtle South,Stylophora,Adult,LA091,5,1,5,6,2,4,,,,,,,
+Lizard,Turtle South,Stylophora,Adult,LA092,7,1,3,3,2,2.5,,,,,,,
+Lizard,Turtle South,Stylophora,Adult,LA093,7,1,2,3,5,4,,,,,,,
+Lizard,Turtle South,Stylophora,Adult,LA094,1,1,0,4,1,2.5,,,,,,,
+Lizard,Turtle South,Stylophora,Adult,LA095,7,1,7,4,2,3,,,,,,,
+Lizard,Turtle South,Stylophora,Adult,LA096,7,1,0,4,4,4,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ001,2,1,0,4,4,4,,,C1c,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ002,10,1,0,6,5,5.5,,,C1c,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ003,8,0,100,,,,,,C1cdt,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ004,17,1,0,4,4,4,,,C1cdt,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ005,18,1,0,4,3,3.5,,,C1cdt,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ006,18,1,55,4,2,3,,,"C1cdt, D1a",C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum (mix with D. trenchii)
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ007,11,0,100,,,,,,C1cdt,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ008,17,1,40,4,3,3.5,,,C1cdt,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ009,2,1,0,4,4,4,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ010,17,1,5,4,2,3,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ011,18,1,0,4,4,4,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ012,17,1,3,4,4,4,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ013,8,1,15,2,4,3,,,C1cd,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ014,8,0,100,,,,,,C1cd,C1,Pnew (rel to Pver_OPI),Pver,Pnew (rel Pbairdi)C. pacificum
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ015,3,0,100,,,,,,C1cd,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ016,4,1,0,4,4,4,,,C1c,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ017,4,1,5,2,2,2,,,C1cdt+,C1,Pacuta,Pacuta,PacutaC. pacificum
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ018,4,1,0,4,5,4.5,,,C1c,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ019,4,1,0,4,4,4,,,C1cd,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ020,5,1,10,4,2,3,,,C1cc,C1,Pacuta,Pacuta,PacutaC. pacificum
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ021,14,0,100,,,,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ022,14,1,0,4,3,3.5,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ023,14,1,0,4,3,2,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ024,9,1,5,2,2,2,,,,,,,
+Lizard,Turtle South,Pocillopora,Juvenile,LJ025,15,1,0,5,3,4,,,C1c,C1,Pacuta,Pactua,PacutaC. pacificum
+Lizard,Turtle South,Pocillopora,Juvenile,LJ026,9,1,0,5,4,4.5,,,C1cd,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Turtle South,Pocillopora,Juvenile,LJ027,15,1,2,4,3,3.5,,,C1cd,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Turtle South,Pocillopora,Juvenile,LJ028,9,1,45,2,2,2,,,C1cd,C1,Pacuta,Pactua,PacutaC. pacificum
+Lizard,Turtle South,Pocillopora,Juvenile,LJ029,16,1,0,4,3,3.5,,,C1cd,C1,Pver_Pbairdi,Pbairdi,Pver_PbairdiC. pacificum
+Lizard,Turtle South,Pocillopora,Juvenile,LJ030,15,1,0,5,2,3.5,,,C1cc,C1,Pacuta,Pactua,PacutaC. pacificum
+Lizard,Turtle South,Pocillopora,Juvenile,LJ031,1,1,0,5,5,5,,,C1cd,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Turtle South,Pocillopora,Juvenile,LJ032,12,1,0,4,2,3,,,C1cd,C1,Pver(OPI40),Pver,Pver(OPI40)C. pacificum
+Lizard,Turtle South,Pocillopora,Juvenile,LJ033,1,0,100,,,,,,,,,,
+Lizard,Turtle South,Pocillopora,Juvenile,LJ034,5,1,0,4,3,3.5,,,,,,,
+Lizard,Turtle South,Pocillopora,Juvenile,LJ035,1,0,100,,,,,,,,,,
+Lizard,Turtle South,Pocillopora,Juvenile,LJ036,6,1,0,4,5,4.5,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ037,17,1,5,4,3,3.5,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ038,2,1,12,5,3,4,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ039,18,1,0,3,4,3.5,,,,,,,
+Lizard,Granite Bluff,Pocillopora,Juvenile,LJ040,18,1,2,4,4,4,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ041,8,0,100,,,,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ042,8,0,100,,,,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ043,8,0,100,,,,,,,,,,
+Lizard,Big Vicki's,Pocillopora,Juvenile,LJ044,4,1,0,3,3,3,,,,,,,
+Lizard,Turtle South,Pocillopora,Juvenile,LJ045,5,1,0,2,4,3,,,,,,,
+Lizard,Turtle South,Pocillopora,Juvenile,LJ046,5,1,0,4,4,4,,,,,,,
+Lizard,Turtle South,Pocillopora,Juvenile,LJ047,1,1,0,3,2,2.5,,,,,,,
+Lizard,Turtle South,Pocillopora,Juvenile,LJ048,6,1,0,2,2,2,,,,,,,
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ049,4,1,0,4,1,2.5,,,C8,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ050,4,1,0,1,4,2.5,,,C8,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ051,4,1,0,3,3,3,,,C8,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ052,10,1,0,4,2,3,,,C8,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ053,13,1,0,3,1,2,,,C8,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ054,13,1,0,3,2,2.5,,,C8b,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ055,17,1,7,3,1,2,,,C8,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ056,13,1,0,3,1,2,,,C8b,C8,,C8,C8 group
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ057,10,1,0,4,1,2.5,,,,,,,
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ058,10,1,0,4,1,2.5,,,,,,,
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ059,13,1,5,4,1,2.5,,,,,,,
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ060,2,1,50,3,1,2,,,,,,,
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ061,2,1,7,3,2,2.5,,,,,,,
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ062,2,1,7,3,2,2.5,,,,,,,
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ063,17,1,5,1,4,2.5,,,,,,,
+Lizard,Granite Bluff,Stylophora,Juvenile,LJ064,17,1,3,4,1,2.5,,,,,,,
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ065,14,1,10,4,3,3.5,,,C8b,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ066,9,1,0,3,2,2.5,,,C8x,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ067,14,1,5,2,2,2,,,C8x,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ068,5,1,0,4,2,3,,,C8,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ069,16,1,30,2,2,2,,,C8x,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ070,15,1,0,2,3,2.5,,,C8x,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ071,9,1,5,4,3,3.5,,,C8x,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ072,9,1,0,3,2,2.5,,,C8x,C8,,C8,C8 group
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ073,9,1,10,1,4,2.5,,,,,,,
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ074,7,1,3,2,4,3,,,,,,,
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ075,14,1,7,3,2,2.5,,,,,,,
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ076,7,1,5,2,3,2.5,,,,,,,
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ077,9,1,3,2,2,2,,,,,,,
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ078,14,1,5,1,4,2.5,,,,,,,
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ079,15,1,0,1,3,2,,,,,,,
+Lizard,Big Vicki's,Stylophora,Juvenile,LJ080,9,1,0,3,2,2.5,,,,,,,
+Lizard,Turtle South,Stylophora,Juvenile,LJ081,6,1,0,2,3,2.5,,,C8b,C8,,C8,
+Lizard,Turtle South,Stylophora,Juvenile,LJ082,12,1,3,3,2,2.5,,,C8b,C8,,C8,
+Lizard,Turtle South,Stylophora,Juvenile,LJ083,6,1,0,4,2,3,,,C8,C8,,C8,
+Lizard,Turtle South,Stylophora,Juvenile,LJ084,12,1,12,1,4,2.5,,,C8,C8,,C8,
+Lizard,Turtle South,Stylophora,Juvenile,LJ085,6,1,5,1,3,2,,,C8,C8,,C8,
+Lizard,Turtle South,Stylophora,Juvenile,LJ086,1,1,5,4,3,3.5,,,C8b,C8,,C8,
+Lizard,Turtle South,Stylophora,Juvenile,LJ087,6,1,5,1,3,2,,,C8b,C8,,C8,
+Lizard,Turtle South,Stylophora,Juvenile,LJ088,12,1,0,4,2,3,,,C8,C8,,C8,
+Lizard,Turtle South,Stylophora,Juvenile,LJ089,5,1,0,2,4,3,,,,,,,
+Lizard,Turtle South,Stylophora,Juvenile,LJ090,7,1,5,4,1,2.5,,,,,,,
+Lizard,Turtle South,Stylophora,Juvenile,LJ091,1,1,20,3,2,2.5,,,,,,,
+Lizard,Turtle South,Stylophora,Juvenile,LJ092,5,1,0,2,3,2.5,,,,,,,
+Lizard,Turtle South,Stylophora,Juvenile,LJ093,1,1,10,4,1,2.5,,,,,,,
+Lizard,Turtle South,Stylophora,Juvenile,LJ094,6,1,10,1,4,2.5,,,,,,,
+Lizard,Turtle South,Stylophora,Juvenile,LJ095,6,1,0,2,3,2.5,,,,,,,
+Lizard,Turtle South,Stylophora,Juvenile,LJ096,7,1,0,3,4,3.5,,,,,,,

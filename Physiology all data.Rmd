@@ -1,0 +1,2989 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+```{r}
+library(dplyr)
+library(tidyr)
+library(Rmisc)
+library(lubridate)
+library(ggplot2)
+library(car)
+library(MASS)
+library(mgcv)
+library(MuMIn)
+library(emmeans)
+library(wesanderson)
+library(effects)
+library(lme4)
+library(nlme)
+library(sjPlot)
+library(colorspace)
+```
+```{r}
+theme_set(theme_classic()+
+        theme(axis.text.x=element_text(vjust=0.5, size=12),#angling the labels on the x-axis
+        plot.title = element_text(margin = margin(t = 10, b = 10), hjust=0.5),#telling it where to position our plot title
+        panel.background= element_rect(fill=NA, color='black'),#this is making the black box around the graph
+        legend.position = c(0.89, 0.89),
+        legend.title = element_blank(),
+        legend.text = element_text(vjust=0.5, size=12),
+        axis.text.y = element_text(vjust=0.5, size=12), #making the axis text larger 
+        #axis.title.x=element_blank(),
+        axis.title.y = element_text(vjust=0.5, size=12)))#making the axis title larger 
+```
+
+```{r}
+R2<-function(mod) {
+    Xmat <- model.matrix(eval(mod$call$fixed)[-2], mod$data)
+    X.var <- var(as.vector(nlme::fixef(mod) %*% t(Xmat)))
+    Z.var <- sum(suppressWarnings(as.numeric(nlme::VarCorr(mod)[
+             rownames(nlme::VarCorr(mod)) != "Residual",1])), na.rm=T)
+    R.var <- as.numeric(nlme::VarCorr(mod)[rownames(nlme::VarCorr(mod))=="Residual", 1])
+    R2.fixed <- X.var/(X.var+Z.var+R.var)
+    R2.random <- Z.var/(X.var+Z.var+R.var)
+    R2.resid <- R.var/(X.var+Z.var+R.var)
+    R2.conditional <- (X.var+Z.var)/(X.var+Z.var+R.var)
+    c(R2.fixed=R2.fixed, R2.random=R2.random, R2.resid=R2.resid,
+      R2.conditional=R2.conditional)
+}#R2 function
+## r2 due to the fixed effects, r2 due the the random effects, amount of the variability due to your residuals (the variability you cant explain), and r2 with the fixed + random 
+```
+
+```{r}
+g<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Lizard and Heron coral survivorship, color, mortality.csv", strip.white=T)
+g
+```
+```{r}
+survivortime<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Lizard and Heron coral survivorship, color, mortality with before no blanks.csv", strip.white=T)
+```
+
+```{r}
+colnames(survivortime)
+```
+
+```{r}
+unique(survivortime$Holobiont)
+```
+
+```{r}
+library(dplyr)
+percentN <- survivortime %>%
+  dplyr::group_by(Region, Holobiont,Treatment) %>%
+  dplyr::summarise(n = n()/2) %>% 
+  dplyr::mutate(freq = n / sum(n))%>% 
+  dplyr::arrange(desc(freq))
+percentN
+```
+```{r}
+survivortime2<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Lizard and Heron coral survivorship, color, mortality with before no blanks.csv", strip.white=T)
+survivortime2<-filter(survivortime, Time == c("During","After"))
+survivortime2
+```
+
+```{r}
+survivortimesum<-summarySE(survivortime2, measurevar="Percentage.dead", groupvars=c("Region","Holobiont","Treatment"), na.rm=TRUE)
+survivortimesum
+```
+
+```{r}
+library(dplyr)
+percentsur <- survivortime %>%
+  dplyr::group_by(Region, Species,Treatment) %>%
+  dplyr::summarise(n = n())  
+  #dplyr::mutate(freq = n / sum(n))%>% 
+  #dplyr::arrange(desc(freq))
+percentsur
+```
+
+```{r}
+f<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/BW and WDV all final.csv", strip.white=T)
+f
+```
+
+```{r}
+speciesid<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Veronica DNA Heron-Lizard.csv", strip.white=T)
+speciesid
+```
+
+```{r}
+survivortime$Holobiont <- factor(survivortime$Holobiont, levels=c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","Pnew (rel Pbairdi)C. pacificum", "PacutaC. pacificum","C8 group","C8 groupH","C78a","C35a group","PdamC33a_sGBR","Pnew (rel Pdam)C33a_sGBR", "PdamC. latusorum"))
+survivortime$Time <- factor(survivortime$Time, levels=c("Before","During","After"))
+survival2<-ggplot(survivortime, aes(y=Survival, x=Time2, color=Holobiont))+ 
+  #geom_point()+
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), se=FALSE)+
+  #geom_jitter(data=allliving, aes(y=Percent.alive,x=Time, color=Region),alpha=0.2,position=position_jitterdodge())+
+  #geom_line(aes(group = interaction(Species, Region), stat="identity"), position=position_dodge(0.6))+
+  facet_grid(~Holobiont)+
+  #geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  #geom_errorbar(aes(ymin=Survival-se, ymax=Survival+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  #scale_y_continuous(expression(Survivorship~("%")), limits=c(0,100))+  
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19)))+
+  scale_color_brewer(palette = "RdBu")+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_text(vjust=0.5, size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+survival2
+```
+```{r}
+library(cowplot)
+surdead<-cowplot::plot_grid(survival2,survival2, nrow=2,  align="h", axis = "bt")  
+surdead
+```
+
+```{r}
+all<- merge(g, f, by=c("Region", "Site", "Species", "Treatment", "Nubbin.ID"), all=T)
+all<-dplyr::filter(all, Holobiont== c("PdamC33a_sGBR","Pnew (rel Pdam)C33a_sGBR", "PdamC. latusorum","C78a","C35a group","C8 group","Pver_PbairdiC. pacificum","Pnew (rel Pbairdi)C. pacificum" ,"Pver(OPI40)C. pacificum","Pver_PbairdiC.pacificum (mix with C.latusorum)","Pver_PbairdiC. pacificum (mix with D. trenchii)", "PacutaC. pacificum"))
+#write.csv(all, "All growth and survival.csv")
+all$Species<-as.factor(all$Species)
+all$Treatment<-as.factor(all$Treatment)
+all$Region<-as.factor(all$Region)
+all$Holobiont<-as.factor(all$Holobiont)
+#all$Time<-as.factor(all$Time)
+all
+```
+
+```{r}
+allliving<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Lizard and Heron growth living frags only.csv", strip.white=T)
+allliving
+```
+
+```{r}
+j<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/All physiology.csv", strip.white=T)
+j
+```
+
+```{r}
+persur<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Fragment survivorship.csv", strip.white=T)
+persur$Region<-as.factor(persur$Region)
+persur$Time<-as.factor(persur$Time)
+persur$Species<-as.factor(persur$Species)
+persur$Treatment<-as.factor(persur$Treatment)
+persur
+```
+```{r}
+persur2<-summarySE(persur, measurevar="Percent.alive", groupvars=c("Region","Time","Species"), na.rm=TRUE)
+persur2
+```
+
+```{r}
+persur2$Region <- factor(persur2$Region, levels=c("Lizard","Heron"))
+persur2$Time <- factor(persur2$Time, levels=c("Before","During","After"))
+survival<-ggplot(persur2, aes(y=Percent.alive, x=Time, color=Region, group=interaction(Species,Region, Time)))+ 
+  #geom_jitter(data=allliving, aes(y=Percent.alive,x=Time, color=Region),alpha=0.2,position=position_jitterdodge())+
+  geom_line(aes(group = interaction(Species, Region), stat="identity"), position=position_dodge(0.6))+
+  facet_grid(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  #geom_errorbar(aes(ymin=Survival-se, ymax=Survival+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Survivorship~("%")), limits=c(0,100))+  
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19)))+
+  scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_blank())
+survival
+```
+
+
+```{r}
+perdead<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Average fragment mortality.csv", strip.white=T)
+perdead$Region<-as.factor(perdead$Region)
+perdead$Time<-as.factor(perdead$Time)
+perdead$Species<-as.factor(perdead$Species)
+perdead$Treatment<-as.factor(perdead$Treatment)
+perdead
+```
+
+```{r}
+perdead<-summarySE(perdead, measurevar="Percent.dead", groupvars=c("Region","Species","Time", "Treatment"), na.rm=TRUE)
+perdead
+```
+
+
+#Bleaching severity
+
+```{r}
+bleachnew<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Color before during after.csv", strip.white=T)
+#bleachnew<-dplyr::filter(bleachnew, Date== c( "2020-03-11","2019-11-25", "2019-12-15", "2020-08-04", "2020-03-21"))
+bleachnew$Region<-as.factor(bleachnew$Region)
+bleachnew$Species<- as.factor(bleachnew$Species)
+bleachnew$Treatment<-as.factor(bleachnew$Treatment)
+bleachnew$Time<-as.factor(bleachnew$Time)
+bleachnew
+```
+
+```{r}
+bleachnew<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Color before during after.csv", strip.white=T)
+bleachnew$Region<-as.factor(bleachnew$Region)
+bleachnew$Species<- as.factor(bleachnew$Species)
+bleachnew$Treatment<-as.factor(bleachnew$Treatment)
+bleachnew$Time<-as.factor(bleachnew$Time)
+bleachnewliz<-dplyr::filter(bleachnew, Region== c( "Lizard"))
+bleachnewher<-dplyr::filter(bleachnew, Region== c( "Heron"))
+bleachnewliz
+bleachnewher
+```
+
+```{r}
+unique(bleachnewher$Date)
+```
+
+```{r}
+coloravg<-summarySE(bleachnew, measurevar='Color', groupvars=c('Region', 'Species', 'Time'), na.rm=TRUE, conf.interval = 0.95)
+coloravg
+```
+
+```{r}
+coloravg$Region <- factor(coloravg$Region, levels=c("Lizard","Heron"))
+coloravg$Time <- factor(coloravg$Time, levels=c("Before","During","After"))
+bleachnew$Region <- factor(bleachnew$Region, levels=c("Lizard","Heron"))
+bleachnew$Time <- factor(bleachnew$Time, levels=c("Before","During","After"))
+bleachfig<-ggplot(coloravg, aes(y=Color, x=Time, color=Color,group=interaction(Region, Species, Time)))+ 
+  geom_jitter(data=bleachnew, aes(y=Color,x=Time, color=Color),alpha=0.2,position=position_jitterdodge())+
+  geom_line(aes(group = interaction(Region,Species), stat="identity"), position=position_dodge(0.5))+
+  facet_grid(~Region)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=Color-se, ymax=Color+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Bleaching~severity), limits=c(1,6), breaks=c(0,1,2,3,4,5,6))+  
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19)))+
+  #scale_color_manual("Species", values=c("Pocillopora"= 'grey70',"Stylophora"= "grey20"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+bleachfig
+```
+
+```{r}
+coloravgliz<-summarySE(bleachnewliz, measurevar='Color', groupvars=c('Species', 'Time'), na.rm=TRUE, conf.interval = 0.95)
+coloravgliz
+```
+
+```{r}
+coloravgliz$Time <- factor(coloravgliz$Time, levels=c("Before","During","After"))
+bleachnewliz$Time <- factor(bleachnewliz$Time, levels=c("Before","During","After"))
+bleachfigliz<-ggplot(coloravgliz, aes(y=Color, x=Time, color=Color,group=interaction(Species, Time)))+ 
+  geom_jitter(data=bleachnewliz, aes(y=Color,x=Time, color=Color),alpha=0.2,position=position_jitterdodge())+
+  geom_line(aes(group = interaction(Species), stat="identity"), position=position_dodge(0.5))+
+  facet_grid(~Region)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=Color-se, ymax=Color+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Bleaching~severity), limits=c(1,6), breaks=c(0,1,2,3,4,5,6))+  
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19)))+
+  scale_color_continuous_sequential(palette = "Red-Yellow")+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+bleachfigliz
+```
+
+```{r}
+coloravgher<-summarySE(bleachnewher, measurevar='Color', groupvars=c('Species', 'Time'), na.rm=TRUE, conf.interval = 0.95)
+coloravgher
+```
+
+```{r}
+coloravgher$Time <- factor(coloravgher$Time, levels=c("Before","During","After"))
+bleachnewher$Time <- factor(bleachnewher$Time, levels=c("Before","During","After"))
+bleachfigher<-ggplot(coloravgher, aes(y=Color, x=Time, color=Color,group=interaction(Species, Time)))+ 
+  geom_jitter(data=bleachnewher, aes(y=Color,x=Time, color=Color),alpha=0.2,position=position_jitterdodge())+
+  geom_line(aes(group = interaction(Species), stat="identity"), position=position_dodge(0.5))+
+  facet_grid(~Region)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=Color-se, ymax=Color+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Bleaching~severity), limits=c(1,6), breaks=c(0,1,2,3,4,5,6))+  
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19)))+
+  scale_color_continuous_sequential(palette = "Magenta")+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+bleachfigher
+```
+
+```{r}
+library(cowplot)
+bleachboth<-cowplot::plot_grid(bleachfigliz,bleachfigher,bleachfigliz,bleachfigher,bleachfigliz,bleachfigher,nrow=3, ncol=2, align="h", axis = "b")  
+bleachboth
+```
+
+
+```{r}
+bleach<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Lizard and Heron survival and bleaching during and after.csv", strip.white=T)
+bleach
+```
+```{r}
+bleach2<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Lizard and Heron survival and bleaching during and after for ploting.csv", strip.white=T)
+bleach2<-dplyr::filter(bleach2, Time== c("During"))
+bleach2
+```
+
+```{r}
+bleachsub<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Lizard and Heron survival and bleaching during and after subset.csv", strip.white=T)
+bleachsub
+```
+####Stats
+```{r}
+color.lm<- lm(Color~Region*Species*Time, data=bleachnew, na.action = na.exclude)
+anova(color.lm)
+tukey<- emmeans(color.lm, list(pairwise ~Region:Species:Time), adjust = "tukey", simple="Time")
+tukey
+```
+
+```{r}
+colorrregionspecies<-summarySE(bleach2, measurevar='Color.Average', groupvars=c('Region', 'Species', 'Time'), na.rm=TRUE, conf.interval = 0.95)
+colorrregionspecies
+```
+
+####Figure - overall
+
+```{r}
+colorrregionspecies$Region <- factor(colorrregionspecies$Region, levels=c("Lizard","Heron"))
+colorrregionspecies$Time <- factor(colorrregionspecies$Time, levels=c("Before","During","After"))
+bleach2$Region <- factor(bleach2$Region, levels=c("Lizard","Heron"))
+bleach2$Time <- factor(bleach2$Time, levels=c("Before","During","After"))
+bleachfig<-ggplot(colorrregionspecies, aes(y=Color.Average, x=Time, color=Region,group=interaction(Species,Region, Time)))+ 
+  geom_jitter(data=bleach2, aes(y=Color.Average,x=Time, color=Region),alpha=0.2,position=position_jitterdodge())+
+  geom_path(aes(group = interaction(Region,Species), stat="identity"), position=position_dodge(0.6))+
+  facet_grid(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=Color.Average-se, ymax=Color.Average+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  #scale_y_continuous(expression(Relative~change~'in'~net~calcification~("%"~Delta~'\U2219'~day^{-1})), limits=c(0,1.25), breaks=c(0,0.25,0.5,0.75,1.0,1.25))+  
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19)))+
+  scale_color_manual("Region", values=c("Lizard"= '#d6604d',"Heron"= "#4393c3"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+bleachfig
+```
+```{r}
+subbleach<-summarySE(bleach, measurevar='Color.Average', groupvars=c('Holobiont','Treatment','Time', 'Species'), na.rm=TRUE, conf.interval = 0.95)
+subbleach
+```
+
+```{r}
+unique(subbleach$Holobiont)
+```
+####Figure - holobiont and treatment
+
+```{r}
+subbleach$Time <- factor(subbleach$Time, levels=c("Before","During","After"))
+subbleach$Holobiont<- factor(subbleach$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+bleach$Time <- factor(bleach$Time, levels=c("Before","During","After"))
+bleach$Holobiont<- factor(bleach$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+bleachfig3<-ggplot(subbleach, aes(y=Color.Average, x=Time, color=Holobiont, shape=Treatment))+ 
+  geom_point(data=bleach, aes(y=Color.Average,x=Time, color=Holobiont,shape=Treatment),alpha=0.5,position=position_jitterdodge(0.05))+
+  geom_path(aes(group = interaction(Treatment,Holobiont), stat="identity"), position=position_dodge(0.1))+
+  facet_wrap(~Holobiont, nrow=1)+
+  geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  geom_errorbar(aes(ymin=Color.Average-se, ymax=Color.Average+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+  #scale_y_continuous(expression(Protein~density~(mg~'\U2219'~cm^{-2})), limits=c(0.3,2.2))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+bleachfig3
+```
+
+
+
+#Calcification
+```{r}
+subcal<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Subset growth Lizard only.csv", strip.white=T)
+subcal
+```
+```{r}
+unique(subcal$Holobiont)
+```
+
+####Stats - Lizard
+```{r}
+subcal.lm<- lm(stanBW~Holobiont*Treatment, data=subcal, na.action = na.exclude)
+anova(subcal.lm)
+tukey<- emmeans(subcal.lm, list(pairwise ~Holobiont*Treatment), adjust = "tukey", simple="Treatment")
+tukey
+```
+####Figure - Lizard by Treatment
+```{r}
+calavgliz<-summarySE(subcal, measurevar='stanBW', groupvars=c('Holobiont', "Region","Treatment"), na.rm=TRUE, conf.interval = 0.95)
+calavgliz
+```
+```{r}
+BWfigliz<-ggplot(calavgliz, aes(y=stanBW, x=reorder(Holobiont,-stanBW), color=Region, shape=Treatment))+ 
+  geom_point(data=subcal, aes(y=stanBW,x=reorder(Holobiont,-stanBW), color=Region, shape=Treatment),alpha=0.2,position=position_jitterdodge(0.2))+
+  #geom_path(data=subset(dinoavg, Region==c("Lizard")),aes(group = interaction(Treatment, Species), stat="identity", linetype=Treatment), position=position_dodge(0.6))+
+  #facet_wrap(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Relative~change~'in'~net~calcification~("%"~Delta~'\U2219'~day^{-1})), limits=c(0,1.25), breaks=c(0,0.25,0.5,0.75,1.0,1.25))+  
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=8),"Juvenile"=(pch=19), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"= 'coral'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=10),
+        legend.position=c(0.89,0.75),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+BWfigliz
+```
+
+```{r}
+subcalheron<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Subset growth Heron only.csv", strip.white=T)
+subcalheron
+```
+```{r}
+unique(subcalheron$Holobiont)
+```
+####Stats - Heron
+```{r}
+subcalheron.lm<- lm(stanBW~Holobiont*Treatment, data=subcalheron, na.action = na.exclude)
+Anova(subcalheron.lm, type=3)
+tukey<- emmeans(subcalheron.lm, list(pairwise ~Holobiont*Treatment), adjust = "tukey", simple="Treatment")
+tukey
+```
+####Figure - Heron by Treatment
+```{r}
+calavgheron<-summarySE(subcalheron, measurevar='stanBW', groupvars=c('Holobiont', "Region"), na.rm=TRUE, conf.interval = 0.95)
+calavgheron
+```
+```{r}
+BWfigheron<-ggplot(calavgheron, aes(y=stanBW, x=reorder(Holobiont,-stanBW), color=Region))+ 
+  geom_jitter(data=subcalheron, aes(y=stanBW,x=reorder(Holobiont,-stanBW), color=Region, shape=Treatment),alpha=0.2,position=position_jitterdodge(0.2))+
+  #geom_path(data=subset(dinoavg, Region==c("Lizard")),aes(group = interaction(Treatment, Species), stat="identity", linetype=Treatment), position=position_dodge(0.6))+
+  #facet_wrap(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Relative~change~'in'~net~calcification~("%"~Delta~'\U2219'~day^{-1})), limits=c(0,1.25), breaks=c(0,0.25,0.5,0.75,1.0,1.25))+  
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=8),"Juvenile"=(pch=19), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Heron"= 'darkslategray'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=10),
+        legend.position=c(0.89,0.75),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+BWfigheron
+```
+
+
+```{r}
+library(cowplot)
+calboth<-cowplot::plot_grid(BWfigliz,BWfigheron,BWfigliz,BWfigheron,BWfigliz,BWfigheron,nrow=3, ncol=2, align="h", axis = "b")  
+calboth
+```
+
+####Subset by Holobiont
+```{r}
+subholocal<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Subset growth by holobiont.csv", strip.white=T)
+subholocal
+```
+####Stats - Calcification between regions
+
+```{r}
+subvol.lm2<- lm(stanvol~Holobiont*Treatment, data=subholocal, na.action = na.exclude)
+anova(subvol.lm2)
+tukey<- emmeans(subvol.lm2, list(pairwise ~Holobiont*Treatment), adjust = "tukey", simple="Treatment")
+tukey
+```
+####Figure - final calcification
+```{r}
+calavgholo<-summarySE(subholocal, measurevar='stanBW', groupvars=c('Holobiont', "Treatment", "Region", "Species"), na.rm=TRUE, conf.interval = 0.95)
+calavgholo
+```
+```{r}
+unique(subholocal$Holobiont)
+```
+
+```{r}
+#calavgholo$Region <- factor(calavgholo$Region, levels=c("Lizard","Heron"))
+calavgholo$Holobiont<- factor(calavgholo$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+subholocal$Region <- factor(subholocal$Region, levels=c("Lizard","Heron"))
+subholocal$Holobiont<- factor(subholocal$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+BWfigholo<-ggplot(calavgholo, aes(y=stanBW, x=Holobiont, color=Holobiont,shape=Treatment))+ 
+  geom_jitter(data=subholocal, aes(y=stanBW,x=Holobiont, color=Holobiont, shape=Treatment), alpha=0.3, position=position_jitterdodge(0.1))+
+  geom_point(size=3, position=position_dodge(0.5),stat="identity")+
+  geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.7),  position=position_dodge(0.5,preserve = "single"),stat="identity") +
+  #geom_point(size=3, position = position_dodge(width=0.3,preserve = "single"))+
+  #geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.5),position = position_dodge(width=0.9,preserve = "single")) +
+  scale_y_continuous(expression(Relative~change~'in'~net~calcification~("%"~Delta~'\U2219'~day^{-1})), limits=c(0,1.25), breaks=c(0,0.25,0.5,0.75,1.0,1.25))+  
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d", "C8 group"="#fddbc7","C8 groupH"="#fddbc7", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  #scale_color_brewer(palette = "RdBu")+
+  theme_classic()+
+  theme(axis.text.x=element_blank(),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'))
+        #strip.text = element_text(face="italic", size=12))
+BWfigholo
+```
+```{r}
+calavg<-summarySE(allliving, measurevar='stanBW', groupvars=c('Species', "Region", "Treatment"), na.rm=TRUE, conf.interval = 0.95)
+calavg
+```
+```{r}
+unique(allliving$Holobiont)
+```
+
+####Test fig
+```{r}
+calavg$Region <- factor(calavg$Region, levels=c("Lizard","Heron"))
+#calavg$Region<- factor(calavg$Holobiont, levels =c("Lizard","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR", "Heron"))
+allliving$Region <- factor(allliving$Region, levels=c("Lizard","Heron"))
+allliving$Holobiont<- factor(allliving$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","Pocillopora","C8 group","Stylophora","Stylophora_Heron","Pocillopora_Heron","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+BWfigholo2<-ggplot(calavg, aes(y=stanBW, x=Region, color=Region,shape=Treatment))+ 
+  geom_jitter(data=allliving, aes(y=stanBW,x=Region, color=Holobiont, shape=Treatment), alpha=0.8, position=position_dodge(0.7))+
+  geom_point(size=3, position=position_dodge(0.7),stat="identity", color='black')+
+  geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.7),  position=position_dodge(0.7,preserve = "single"),stat="identity", color='black') +
+  facet_wrap(~Species)+
+  #geom_point(size=3, position = position_dodge(width=0.3,preserve = "single"))+
+  #geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.5),position = position_dodge(width=0.9,preserve = "single")) +
+  scale_y_continuous(expression(Relative~change~'in'~net~calcification~("%"~Delta~'\U2219'~day^{-1})), limits=c(0,1.25), breaks=c(0,0.25,0.5,0.75,1.0,1.25))+  
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","Pocillopora"="#f4a582", "C8 group"="#fddbc7","Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+BWfigholo2
+```
+```{r}
+cal2<-cowplot::plot_grid(BWfigholo, BWfigholo,BWfigholo,nrow=3,  align="h", axis = "bt")
+cal2
+```
+
+```{r}
+volavgholo<-summarySE(subholocal, measurevar='stanvol', groupvars=c('Holobiont', "Treatment"), na.rm=TRUE, conf.interval = 0.95)
+volavgholo
+```
+
+```{r}
+unique(subholocal$Holobiont)
+```
+```{r}
+volavg$Region <- factor(volavg$Region, levels=c("Lizard","Heron"))
+#calavg$Region<- factor(calavg$Holobiont, levels =c("Lizard","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR", "Heron"))
+allliving$Region <- factor(allliving$Region, levels=c("Lizard","Heron"))
+allliving$Holobiont<- factor(allliving$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","Pocillopora","C8 group","Stylophora","Stylophora_Heron","Pocillopora_Heron","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+volfigholo2<-ggplot(volavg, aes(y=stanvol, x=Region, color=Region,shape=Treatment))+
+  geom_jitter(data=allliving, aes(y=stanvol,x=Region, color=Holobiont, shape=Treatment), alpha=0.8, position=position_dodge(0.7))+
+  geom_point(size=3, position=position_dodge(0.7),stat="identity", color='black')+
+  geom_errorbar(aes(ymin=stanvol-se, ymax=stanvol+se, width= 0.7),  position=position_dodge(0.7,preserve = "single"),stat="identity", color='black') +
+  facet_wrap(~Species)+
+  #geom_point(size=3, position = position_dodge(width=0.3,preserve = "single"))+
+  #geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.5),position = position_dodge(width=0.9,preserve = "single")) +
+  scale_y_continuous(expression(Relative~change~'in'~volumetric~expansion~("%"~Delta~'\U2219'~day^{-1})), limits=c(0,1.5))+   
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","Pocillopora"="#f4a582", "C8 group"="#fddbc7","Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+volfigholo2
+```
+
+```{r}
+#calavgholo$Region <- factor(calavgholo$Region, levels=c("Lizard","Heron"))
+volavgholo$Holobiont<- factor(volavgholo$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+subholocal$Region <- factor(subholocal$Region, levels=c("Lizard","Heron"))
+subholocal$Holobiont<- factor(subholocal$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+volfigholo<-ggplot(volavgholo, aes(y=stanvol, x=Holobiont, color=Holobiont,shape=Treatment))+ 
+  geom_jitter(data=subholocal, aes(y=stanvol,x=Holobiont, color=Holobiont, shape=Treatment), alpha=0.3, position=position_jitterdodge(0.1))+
+  geom_point(size=3, position=position_dodge(0.5),stat="identity")+
+  geom_errorbar(aes(ymin=stanvol-se, ymax=stanvol+se, width= 0.7),  position=position_dodge(0.5,preserve = "single"),stat="identity") +
+  #geom_point(size=3, position = position_dodge(width=0.3,preserve = "single"))+
+  #geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.5),position = position_dodge(width=0.9,preserve = "single")) +
+  scale_y_continuous(expression(Relative~change~'in'~volumetric~expansion~("%"~Delta~'\U2219'~day^{-1})), limits=c(0,1.5))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d", "C8 group"="#fddbc7","C8 groupH"="#fddbc7", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  #scale_color_brewer(palette = "RdBu")+
+  theme_classic()+
+  theme(axis.text.x=element_blank(),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'))
+        #strip.text = element_text(face="italic", size=12))
+volfigholo
+```
+
+```{r}
+library(cowplot)
+cal2<-cowplot::plot_grid(BWfigholo,BWfigholo2, volfigholo,volfigholo2,nrow=4,  align="h", axis = "bt")
+cal2
+```
+
+
+####Figure - overall
+
+```{r}
+calavg$Region <- factor(calavg$Region, levels=c("Lizard", "Heron"))
+#allliving$Region <- factor(allliving$Region, levels=c("Lizard", "Heron"))
+BWfig<-ggplot(calavg, aes(y=stanBW, x=Region, color=Region,shape=Treatment, group=interaction(Species,Region,Treatment)))+ 
+  #geom_jitter(data=allliving, aes(y=stanBW,x=Region, color=Region),alpha=0.2,position=position_jitterdodge())+
+  #geom_path(data=subset(dinoavg, Region==c("Lizard")),aes(group = interaction(Treatment, Species), stat="identity", linetype=Treatment), position=position_dodge(0.6))+
+  facet_wrap(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Relative~change~'in'~net~calcification~("%"~Delta~'\U2219'~day^{-1})), limits=c(0,1.25), breaks=c(0,0.25,0.5,0.75,1.0,1.25))+  
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"= 'coral',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+BWfig
+```
+```{r}
+#calavg2$Holobiont <- factor(calavg2$Holobiont, levels=c("Pver(OPI40)C. pacificum", "Pver_PbairdiC. pacificum" ,"PacutaC. pacificum","PdamC33a_sGBR","PdamC. latusorum","C8 group","C78a","C35a group", "", ""))
+BWfig2<-ggplot(allliving, aes(y=stanBW, x=reorder(Holobiont, -stanBW), color=Holobiont, shape=Treatment))+ 
+  geom_jitter(data=allliving, aes(y=stanBW,x=reorder(Holobiont, -stanBW),shape=Treatment, color=Region),alpha=0.2,position=position_jitterdodge())+
+  #geom_path(data=subset(dinoavg, Region==c("Lizard")),aes(group = interaction(Treatment, Species), stat="identity", linetype=Treatment), position=position_dodge(0.6))+
+  #facet_wrap(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Relative~change~'in'~net~calcification~("%"~Delta~'\U2219'~day^{-1})),  breaks=c(0,0.25,0.5,0.75,1.0,1.25))+  
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"= 'coral',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12, angle=90),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+BWfig2
+```
+
+
+
+
+####Figure - holobiont & treatment
+```{r}
+calavg2<-summarySE(allliving, measurevar='stanBW', groupvars=c('Holobiont', "Species","Region", "Treatment"), na.rm=TRUE, conf.interval = 0.95)
+calavg2
+```
+```{r}
+#calavg2$Holobiont <- factor(calavg2$Holobiont, levels=c("Pver(OPI40)C. pacificum", "Pver_PbairdiC. pacificum" ,"PacutaC. pacificum","PdamC33a_sGBR","PdamC. latusorum","C8 group","C78a","C35a group", "", ""))
+BWfig2<-ggplot(calavg2, aes(y=stanBW, x=reorder(Holobiont, -stanBW), color=Region, shape=Treatment, group=interaction(Region)))+ 
+  geom_jitter(data=allliving, aes(y=stanBW,x=reorder(Holobiont, -stanBW),shape=Treatment, color=Region),alpha=0.2,position=position_jitterdodge())+
+  #geom_path(data=subset(dinoavg, Region==c("Lizard")),aes(group = interaction(Treatment, Species), stat="identity", linetype=Treatment), position=position_dodge(0.6))+
+  #facet_wrap(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Relative~change~'in'~net~calcification~("%"~Delta~'\U2219'~day^{-1})),  breaks=c(0,0.25,0.5,0.75,1.0,1.25))+  
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"= 'coral',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12, angle=90),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+BWfig2
+```
+####Figure - holobiont
+```{r}
+calavg3<-summarySE(allliving, measurevar='stanBW', groupvars=c('Holobiont', "Species","Region"), na.rm=TRUE, conf.interval = 0.95)
+calavg3
+```
+
+```{r}
+#calavg2$Holobiont <- factor(calavg2$Holobiont, levels=c("Pver(OPI40)C. pacificum", "Pver_PbairdiC. pacificum" ,"PacutaC. pacificum","PdamC33a_sGBR","PdamC. latusorum","C8 group","C78a","C35a group", "", ""))
+BWfig3<-ggplot(calavg3, aes(y=stanBW, x=reorder(Holobiont, -stanBW), color=Region, group=interaction(Region)))+ 
+  geom_jitter(data=allliving, aes(y=stanBW,x=reorder(Holobiont, -stanBW), color=Region),alpha=0.2,position=position_jitterdodge())+
+  #geom_path(data=subset(dinoavg, Region==c("Lizard")),aes(group = interaction(Treatment, Species), stat="identity", linetype=Treatment), position=position_dodge(0.6))+
+  facet_wrap(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=stanBW-se, ymax=stanBW+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Relative~change~'in'~net~calcification~("%"~Delta~'\U2219'~day^{-1})),  breaks=c(0,0.25,0.5,0.75,1.0,1.25))+  
+ scale_color_manual("Region", values=c("Lizard"= 'coral',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12, angle=90),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+BWfig3
+```
+####Figure - composite
+
+```{r}
+library(cowplot)
+cal2<-cowplot::plot_grid(BWfig, BWfig3, ncol=2,  align="h", axis = "bt")
+cal2
+```
+
+
+
+#Volume
+
+####Stats - Calcification between regions
+```{r}
+subcal.lm2<- lme(stanvol~Region*Species*Treatment, random=~1|Site, data=allliving, na.action = na.exclude)
+Anova(subcal.lm2)
+tukey<- emmeans(subcal.lm2, list(pairwise ~Region:Species), adjust = "tukey")
+tukey
+tukey<- emmeans(subcal.lm2, list(pairwise ~Treatment), adjust = "tukey")
+tukey
+```
+
+####Figure - overall
+```{r}
+volavg<-summarySE(allliving, measurevar='stanvol', groupvars=c('Species', "Region", "Treatment"), na.rm=TRUE, conf.interval = 0.95)
+volavg
+```
+
+```{r}
+volfig<-ggplot(volavg, aes(y=stanvol, x=Region, color=Region,group=interaction(Species,Region)))+ 
+  geom_jitter(data=allliving, aes(y=stanvol,x=Region, color=Region),alpha=0.2,position=position_jitterdodge())+
+  #geom_path(data=subset(dinoavg, Region==c("Lizard")),aes(group = interaction(Treatment, Species), stat="identity", linetype=Treatment), position=position_dodge(0.6))+
+  facet_grid(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=stanvol-se, ymax=stanvol+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Relative~change~'in'~volumetric~expansion~("%"~Delta~'\U2219'~day^{-1})), limits=c(0,1.5))+   
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19),"NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"= 'coral',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_blank())
+volfig
+```
+####Figure - holobiont
+```{r}
+volavg2<-summarySE(allliving, measurevar='stanvol', groupvars=c('Holobiont','Species', "Region"), na.rm=TRUE, conf.interval = 0.95)
+volavg2
+```
+
+```{r}
+volfig2<-ggplot(volavg2, aes(y=stanvol, x=reorder(Holobiont, -stanvol), color=Region,group=interaction(Species,Region)))+ 
+  geom_jitter(data=allliving, aes(y=stanvol, x=reorder(Holobiont, -stanvol), color=Region),alpha=0.2,position=position_jitterdodge())+
+  #geom_path(data=subset(dinoavg, Region==c("Lizard")),aes(group = interaction(Treatment, Species), stat="identity", linetype=Treatment), position=position_dodge(0.6))+
+  facet_grid(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=stanvol-se, ymax=stanvol+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Relative~change~'in'~volumetric~expansion~("%"~Delta~'\U2219'~day^{-1})), limits=c(0,1.5))+   
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19),"NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"= 'coral',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12, angle=90),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_blank())
+volfig2
+```
+```{r}
+volavgholo<-summarySE(subholocal, measurevar='stanvol', groupvars=c('Holobiont', "Region", "Treatment"), na.rm=TRUE, conf.interval = 0.95)
+volavgholo
+```
+
+
+```{r}
+volavgholo$Region <- factor(volavgholo$Region, levels=c("Lizard","Heron"))
+volavgholo$Holobiont<- factor(volavgholo$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+subholocal$Region <- factor(subholocal$Region, levels=c("Lizard","Heron"))
+subholocal$Holobiont<- factor(subholocal$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+volfigholo<-ggplot(volavgholo, aes(y=stanvol, x=Holobiont, color=Region,shape=Treatment))+ 
+  geom_jitter(data=subholocal, aes(y=stanvol,x=Holobiont, color=Region, shape=Treatment), alpha=0.3, position=position_jitterdodge(0.1))+
+  geom_point(size=3, position=position_dodge(0.5),stat="identity")+
+  geom_errorbar(aes(ymin=stanvol-se, ymax=stanvol+se, width= 0.7),  position=position_dodge(0.5,preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Relative~change~'in'~volumetric~expansion~("%"~Delta~'\U2219'~day^{-1})), limits=c(0,1.5))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"= 'coral',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12, angle=90),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'))
+        #strip.text = element_text(face="italic", size=12))
+volfigholo
+```
+####Figure - composite BW & vol
+```{r}
+library(cowplot)
+calall<-cowplot::plot_grid(BWfigholo, volfigholo, nrow=2,  align="h", axis = "bt")
+calall
+```
+
+#PAM
+```{r}
+pam<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Heron and Lizard PAM data subset.csv", strip.white=T)
+pam$Region<-as.factor(pam$Region)
+pam$Species<- as.factor(pam$Species)
+pam$Treatment<-as.factor(pam$Treatment)
+pam$Time<-as.factor(pam$Time)
+pam<- plyr::rename(pam, c("Nubbin.ID"="Nubbin_ID"))
+pam<-filter(pam, Time == c("During","After"))
+#pam<-filter(pam, Holobiont== c("C78a","C8 group","PdamC. latusorum","PdamC33a_sGBR","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum"))
+pam
+```
+```{r}
+pamplot<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Heron and Lizard PAM data.csv", strip.white=T)
+pamplot$Region<-as.factor(pamplot$Region)
+pamplot$Species<- as.factor(pamplot$Species)
+pamplot$Treatment<-as.factor(pamplot$Treatment)
+pamplot$Time<-as.factor(pamplot$Time)
+pamplot<- plyr::rename(pamplot, c("Nubbin.ID"="Nubbin_ID"))
+#pamplot<-filter(pamplot, Frag == "original")
+#pamplot<-filter(pamplot, Holobiont== c("C78a","C8 group","PdamC. latusorum","PdamC33a_sGBR","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum"))
+pamplot
+```
+```{r}
+unique(pamplot$Species)
+```
+
+```{r}
+allpamsum<-summarySE(pam, measurevar='Y', groupvars=c('Holobiont',"Species",'Region','Time',"Treatment", "Nubbin_ID", "Frag"), na.rm=TRUE, conf.interval = 0.95)
+allpamsum
+```
+
+```{r}
+colnames(phys)
+```
+
+
+```{r}
+physwithpam<- merge(phys, allpamsum, by=c("Region","Species","Treatment","Time","Nubbin_ID","Holobiont"), all=T)
+physwithpam
+```
+
+####Figure - overall
+```{r}
+allpam<-summarySE(pam, measurevar='Y', groupvars=c('Species','Region','Time',"Treatment"), na.rm=TRUE, conf.interval = 0.95)
+allpam
+```
+
+```{r}
+allpam$Region <- factor(allpam$Region, levels=c("Lizard","Heron"))
+allpam$Time <- factor(allpam$Time, levels=c("Before","During","After"))
+pam$Region <- factor(pam$Region, levels=c("Lizard","Heron"))
+pam$Time <- factor(pam$Time, levels=c("Before","During","After"))
+pamfig<-ggplot(allpam, aes(y=Y, x=Time, color=Region,shape=Treatment, group=interaction(Species,Time,Region)))+ 
+  geom_jitter(data=allpamsum, aes(y=Y,x=Time, color=Region, shape=Treatment),alpha=0.1,position=position_jitterdodge(0.1))+
+  #geom_path(aes(group = interaction(Treatment,Species), stat="identity", linetype=Treatment), position=position_dodge(0.6))+
+  facet_grid(~Species)+
+  geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  geom_errorbar(aes(ymin=Y-se, ymax=Y+se, width= 0.5), position=position_dodge2(preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Photosynthetic~yield~(Fv/Fm)), limits=c(550,825))+ 
+  #scale_shape_manual("Holobiont",values=c("C78a"=(pch=1),"C8 group"=(pch=19),"PdamC. latusorum"=(pch=4),"PdamC33a_sGBR"=(pch=17),"Pver(OPI40)C. pacificum"=(pch=8),"Pver_PbairdiC. pacificum"=(pch=15)))+
+  scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+pamfig
+```
+####Figure - holobiont
+```{r}
+allpamsub<-summarySE(pam, measurevar='Y', groupvars=c('Holobiont','Time', "Treatment","Species"), na.rm=TRUE, conf.interval = 0.95)
+allpamsub
+```
+```{r}
+allpamsub$Time <- factor(allpamsub$Time, levels=c("Before","During","After"))
+allpamsub$Holobiont<- factor(allpamsub$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+pamplot$Time <- factor(pamplot$Time, levels=c("Before","During","After"))
+pamplot$Holobiont<- factor(pamplot$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+pamfig3<-ggplot(allpamsub, aes(y=Y, x=Time, color=Holobiont, shape=Treatment),group=interaction(Treatment,Holobiont))+ 
+  geom_point(data=pam, aes(y=Y,x=Time, color=Holobiont,shape=Treatment),alpha=0.5,position=position_jitterdodge(0.05))+
+  geom_path(aes(group = interaction(Treatment,Holobiont), stat="identity"), position=position_dodge(0.5))+
+  facet_wrap(~Holobiont, nrow=1)+
+  geom_point(size=3, position=position_dodge(0.5),stat="identity")+
+  geom_errorbar(aes(ymin=Y-se, ymax=Y+se, width= 0.5),  position=position_dodge(0.5),stat="identity") +
+  scale_y_continuous(expression(Photosynthetic~efficiency~(Fv/Fm)), limits=c(600,800))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+pamfig3
+```
+####Figure - overall with holobiont dots
+```{r}
+unique(pamplot$Holobiont)
+```
+
+
+```{r}
+allpam$Region <- factor(allpam$Region, levels=c("Lizard","Heron"))
+allpam$Time <- factor(allpam$Time, levels=c("Before","During","After"))
+#calavg$Region<- factor(calavg$Holobiont, levels =c("Lizard","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR", "Heron"))
+pamplot$Region <- factor(pamplot$Region, levels=c("Lizard","Heron"))
+allpamsum$Time <- factor(allpamsum$Time, levels=c("Before","During","After"))
+pamplot$Holobiont<- factor(pamplot$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","Pocillopora","C8 group","Stylophora","Stylophora_Heron","Pocillopora_Heron","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+pamfigholo<-ggplot(allpam, aes(y=Y, x=Time, color=Region,shape=Treatment))+ 
+  #geom_jitter(data=allpamsum, aes(y=Y,x=Time, color=Holobiont, shape=Treatment), alpha=0.8, position=position_dodge(0.5))+
+  geom_point(size=3, position=position_dodge(0.3),stat="identity")+
+  facet_wrap(~Species)+
+  geom_errorbar(aes(ymin=Y-se, ymax=Y+se, width= 0.3),  position=position_dodge(0.3),stat="identity") +
+  #geom_path(aes(group = interaction(Treatment,Species,Region), stat="identity"), position=position_dodge(0.3), color='black')+
+  scale_y_continuous(expression(Photosynthetic~efficiency~(Fv/Fm)))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+   scale_color_manual("Region", values=c("Lizard"= "#f4a582","Heron"= "#4393c3"))+
+  #scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","Pocillopora"="#f4a582", "C8 group"="#fddbc7","Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+pamfigholo
+```
+#Physiology 
+```{r}
+phys<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/All physiology subset.csv", strip.white=T)
+phys$Region<-as.factor(phys$Region)
+phys$Species<- as.factor(phys$Species)
+phys$Treatment<-as.factor(phys$Treatment)
+phys$Time<-as.factor(phys$Time)
+phys$Time2<-as.factor(phys$Time2)
+phys<- plyr::rename(phys, c("Nubbin.ID"="Nubbin_ID"))
+phys
+```
+```{r}
+#physliz<-filter(phys, Region == "Lizard")
+#physher<-filter(phys, Region == "Heron")
+```
+
+```{r}
+unique(phys$Holobiont)
+```
+###Protein
+```{r}
+subpro<-summarySE(phys, measurevar='Protein.cm2', groupvars=c('Holobiont','Region','Time', "Species"), na.rm=TRUE, conf.interval = 0.95)
+subpro
+```
+####Stats
+```{r}
+protein.lm<- lm(Protein.cm2~Holobiont*Treatment*Time2, data=phys, na.action = na.exclude)
+anova(protein.lm)
+tukey<- emmeans(protein.lm, list(pairwise ~Holobiont:Treatment), adjust = "tukey", simple="Treatment")
+tukey
+tukey<- emmeans(protein.lm, list(pairwise ~Holobiont:Time2), adjust = "tukey", simple="Time2")
+tukey
+tukey<- emmeans(protein.lm, list(pairwise ~Treatment:Time2), adjust = "tukey", simple="Time2")
+tukey
+```
+
+```{r}
+protein.lm2<- lme(Protein.cm2~Region*Species*Treatment*Time2, random=~1|Site, data=phys, na.action = na.exclude)
+Anova(protein.lm2)
+tukey<- emmeans(protein.lm2, list(pairwise ~Region:Species:Treatment), adjust = "tukey", simple="Treatment")
+tukey
+tukey<- emmeans(protein.lm2, list(pairwise ~Treatment:Time2), adjust = "tukey")
+tukey
+tukey<- emmeans(protein.lm2, list(pairwise ~Region:Species:Treatment), adjust = "tukey", simple="Region")
+tukey
+```
+####Figure - overall
+```{r}
+allpro<-summarySE(phys, measurevar='Protein.cm2', groupvars=c('Species','Region','Time', "Treatment"), na.rm=TRUE, conf.interval = 0.95)
+allpro
+```
+
+```{r}
+allpro$Region <- factor(allpro$Region, levels=c("Lizard","Heron"))
+allpro$Time <- factor(allpro$Time, levels=c("Before","During","After"))
+phys$Region <- factor(phys$Region, levels=c("Lizard","Heron"))
+phys$Time <- factor(phys$Time, levels=c("Before","During","After"))
+profig<-ggplot(allpro, aes(y=Protein.cm2, x=Time, color=Region, group=interaction(Species,Time,Region)))+ 
+  geom_jitter(data=phys, aes(y=Protein.cm2,x=Time, color=Region),alpha=0.2,position=position_jitterdodge(0.1))+
+  geom_path(aes(group = interaction(Region), stat="identity"), position=position_dodge(0.1))+
+  facet_wrap(~Species)+
+  geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  geom_errorbar(aes(ymin=Protein.cm2-se, ymax=Protein.cm2+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+  scale_y_continuous(expression(Protein~density~(mg~'\U2219'~cm^{-2})), limits=c(0.3,2.2))+ 
+  scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+profig
+```
+
+####Figure - holobiont & treatment
+
+```{r}
+subpro2<-summarySE(phys, measurevar='Protein.cm2', groupvars=c('Holobiont','Treatment','Time',"Species", "Region"), na.rm=TRUE, conf.interval = 0.95)
+subpro2
+```
+```{r}
+unique(subpro2$Holobiont)
+```
+
+
+```{r}
+subpro2$Time <- factor(subpro2$Time, levels=c("Before","During","After"))
+subpro2$Holobiont<- factor(subpro2$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+phys$Time <- factor(phys$Time, levels=c("Before","During","After"))
+phys$Holobiont<- factor(phys$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+profig3<-ggplot(subpro2, aes(y=Protein.cm2, x=Time, color=Holobiont, shape=Treatment))+ 
+  geom_point(data=phys, aes(y=Protein.cm2,x=Time, color=Holobiont,shape=Treatment),alpha=0.5,position=position_jitterdodge(0.05))+
+  geom_path(aes(group = interaction(Treatment,Holobiont), stat="identity"), position=position_dodge(0.1))+
+  facet_wrap(~Holobiont, nrow=1)+
+  geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  geom_errorbar(aes(ymin=Protein.cm2-se, ymax=Protein.cm2+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+  scale_y_continuous(expression(Protein~density~(mg~'\U2219'~cm^{-2})), limits=c(0.3,2.2))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+profig3
+```
+
+```{r}
+physplot<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/All physiology subset for ploting.csv", strip.white=T)
+physplot$Region<-as.factor(physplot$Region)
+physplot$Species<- as.factor(physplot$Species)
+physplot$Treatment<-as.factor(physplot$Treatment)
+physplot$Time<-as.factor(physplot$Time)
+physplot$Time2<-as.factor(physplot$Time2)
+physplot<- plyr::rename(physplot, c("Nubbin.ID"="Nubbin_ID"))
+physplot
+```
+
+
+####Figure - overall with holobiont dots
+```{r}
+allpro$Region <- factor(allpro$Region, levels=c("Lizard","Heron"))
+allpro$Time <- factor(allpro$Time, levels=c("Before","During","After"))
+#calavg$Region<- factor(calavg$Holobiont, levels =c("Lizard","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR", "Heron"))
+physplot$Region <- factor(physplot$Region, levels=c("Lizard","Heron"))
+physplot$Time <- factor(physplot$Time, levels=c("Before","During","After"))
+physplot$Holobiont<- factor(physplot$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","Stylophora_Heron","C78a","Pocillopora_Heron","PdamC. latusorum","PdamC33a_sGBR"))
+proteinfigholo<-ggplot(allpro, aes(y=Protein.cm2, x=Time, color=Region,shape=Treatment))+ 
+  #geom_jitter(data=physplot, aes(y=Protein.cm2,x=Time, color=Holobiont, shape=Treatment), alpha=0.8, position=position_dodge(0.5))+
+  geom_point(size=3, position=position_dodge(0.3),stat="identity")+
+  facet_wrap(~Species)+
+  geom_errorbar(aes(ymin=Protein.cm2-se, ymax=Protein.cm2+se, width= 0.7),  position=position_dodge(0.3),stat="identity") +
+  geom_path(aes(group = interaction(Treatment,Species,Region), stat="identity"), position=position_dodge(0.3))+
+  scale_y_continuous(expression(Protein~density~(mg~'\U2219'~cm^{-2})))+  
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"= "#f4a582","Heron"= "#4393c3"))+
+  #scale_color_brewer(palette = "RdBu")+
+  #scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","C8 group"="#fddbc7","C8 groupH"="#fddbc7","Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+proteinfigholo
+```
+
+
+##Symbiont density
+```{r}
+alldino<-summarySE(phys, measurevar='Dino.density', groupvars=c('Species','Region','Treatment','Time'), na.rm=TRUE, conf.interval = 0.95)
+alldino
+```
+####Stats
+```{r}
+sym.lm<- lme(Dino.density~Region*Species*Treatment*Time2, random=~1|Site, data=phys, na.action = na.exclude)
+Anova(sym.lm)
+tukey<- emmeans(sym.lm, list(pairwise ~Region:Species:Treatment), adjust = "tukey", simple="Treatment")
+tukey
+tukey<- emmeans(sym.lm, list(pairwise ~Species:Time2), adjust = "tukey")
+tukey
+tukey<- emmeans(sym.lm, list(pairwise ~Region:Time2), adjust = "tukey", simple="Time2")
+tukey
+```
+
+```{r}
+sym.lm2<- lm(Dino.density~Holobiont*Treatment*Time2, data=phys, na.action = na.exclude)
+anova(sym.lm2)
+tukey<- emmeans(sym.lm2, list(pairwise ~Holobiont:Time2), adjust = "tukey", simple="Time2")
+tukey
+```
+
+```{r}
+alldino<-summarySE(phys, measurevar='Dino.density', groupvars=c('Region','Time',"Treatment","Species"), na.rm=TRUE, conf.interval = 0.95)
+alldino
+```
+####Figure - overall
+```{r}
+phys$Time<- factor(phys$Time, levels=c("Before","During","After"))
+phys$Region <- factor(phys$Region, levels=c("Lizard","Heron"))
+alldino$Region <- factor(alldino$Region, levels=c("Lizard","Heron"))
+alldino$Time <- factor(alldino$Time, levels=c("Before","During","After"))
+dinofig<-ggplot(alldino, aes(y=Dino.density, x=Time, color=Region,group=interaction(Species,Time,Region)))+ 
+  geom_jitter(data=phys, aes(y=Dino.density,x=Time, color=Region),alpha=0.2,position=position_jitterdodge())+
+  geom_path(aes(group = interaction(Region,Species), stat="identity"), position=position_dodge(0.6))+
+  facet_grid(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=Dino.density-se, ymax=Dino.density+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+    scale_y_continuous(expression(Symbiont~density~(10^{6}~cells~'\U2219'~cm^{-2})), limits=c(0.0,1.5), breaks=c(0.0,0.5,1.0,1.5))+
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19)))+
+ scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+dinofig
+```
+####Figure - holobiont
+```{r}
+subdino<-summarySE(phys, measurevar='Dino.density', groupvars=c('Holobiont','Region','Time', "Species"), na.rm=TRUE, conf.interval = 0.95)
+subdino
+```
+
+
+####Figure - holobiont & treatment
+
+```{r}
+subsym2<-summarySE(phys, measurevar='Dino.density', groupvars=c('Holobiont','Treatment','Time',"Species"), na.rm=TRUE, conf.interval = 0.95)
+subsym2
+```
+```{r}
+#subpro2$Region <- factor(subpro2$Region, levels=c("Lizard","Heron"))
+subsym2$Time <- factor(subsym2$Time, levels=c("Before","During","After"))
+subsym2$Holobiont<- factor(subsym2$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+#phys$Region <- factor(phys$Region, levels=c("Lizard","Heron"))
+phys$Time <- factor(phys$Time, levels=c("Before","During","After"))
+phys$Holobiont<- factor(phys$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+symfig3<-ggplot(subsym2, aes(y=Dino.density, x=Time, color=Holobiont, shape=Treatment))+ 
+  geom_point(data=phys, aes(y=Dino.density,x=Time, color=Holobiont,shape=Treatment),alpha=0.5,position=position_jitterdodge(0.05))+
+  geom_path(aes(group = interaction(Treatment,Holobiont), stat="identity"), position=position_dodge(0.1))+
+  facet_wrap(~Holobiont, nrow=1)+
+  geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  geom_errorbar(aes(ymin=Dino.density-se, ymax=Dino.density+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+ scale_y_continuous(expression(Symbiont~density~(10^{6}~cells~'\U2219'~cm^{-2})), limits=c(0.0,2.0), breaks=c(0.0,0.5,1.0,1.5, 2.0))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+symfig3
+```
+
+
+####Figure - overall with holobiont dots
+```{r}
+alldino$Region <- factor(alldino$Region, levels=c("Lizard","Heron"))
+alldino$Time <- factor(alldino$Time, levels=c("Before","During","After"))
+#calavg$Region<- factor(calavg$Holobiont, levels =c("Lizard","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR", "Heron"))
+physplot$Region <- factor(physplot$Region, levels=c("Lizard","Heron"))
+physplot$Time <- factor(physplot$Time, levels=c("Before","During","After"))
+physplot$Holobiont<- factor(physplot$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","Stylophora_Heron","C78a","Pocillopora_Heron","PdamC. latusorum","PdamC33a_sGBR"))
+symfigholo<-ggplot(alldino, aes(y=Dino.density, x=Time, color=Region,shape=Treatment))+ 
+  #geom_jitter(data=physplot, aes(y=Dino.density,x=Time, color=Holobiont, shape=Treatment), alpha=0.8, position=position_dodge(0.5))+
+  geom_point(size=3, position=position_dodge(0.3),stat="identity")+
+  facet_wrap(~Species)+
+  geom_errorbar(aes(ymin=Dino.density-se, ymax=Dino.density+se, width= 0.7),  position=position_dodge(0.3),stat="identity") +
+  geom_path(aes(group = interaction(Treatment,Species,Region), stat="identity"), position=position_dodge(0.3))+
+  scale_y_continuous(expression(Symbiont~density~(10^{6}~cells~'\U2219'~cm^{-2})), limits=c(0.25,1.5), breaks=c(0.25,0.5,0.75,1.0,1.25,1.5))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"= "#f4a582","Heron"= "#4393c3"))+
+  #scale_color_brewer(palette = "RdBu")+
+   #scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","C8 group"="#fddbc7","C8 groupH"="#fddbc7","Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+symfigholo
+```
+
+##Chlorophyll a per cell
+
+####Stats
+```{r}
+chla.lm<- lm(Chla.cell~Region*Species*Treatment*Time2, data=phys, na.action = na.exclude)
+Anova(chla.lm, type=3)
+tukey<- emmeans(chla.lm, list(pairwise ~Treatment:Time2), adjust = "tukey")
+tukey
+tukey<- emmeans(chla.lm, list(pairwise ~Region:Time2), adjust = "tukey")
+tukey
+```
+
+```{r}
+chla.lm2<- lm(Chla.cell~Holobiont*Treatment*Time2, data=phys, na.action = na.exclude)
+anova(chla.lm2)
+tukey<- emmeans(chla.lm2, list(pairwise ~Treatment:Time2), adjust = "tukey", simple="Time")
+tukey
+```
+####Figure - overall
+```{r}
+allchla<-summarySE(phys, measurevar='Chla.cell', groupvars=c('Species','Region','Time',"Treatment"), na.rm=TRUE, conf.interval = 0.95)
+allchla
+```
+
+```{r}
+allchla$Region <- factor(allchla$Region, levels=c("Lizard","Heron"))
+allchla$Time <- factor(allchla$Time, levels=c("Before","During","After"))
+chlafig<-ggplot(allchla, aes(y=Chla.cell, x=Time, color=Region, group=interaction(Species,Time,Region)))+ 
+  geom_jitter(data=phys, aes(y=Chla.cell,x=Time, color=Region),alpha=0.2,position=position_jitterdodge())+
+  geom_path(aes(group = interaction(Region), stat="identity"), position=position_dodge(0.6))+
+  facet_grid(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=Chla.cell-se, ymax=Chla.cell+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Chlorophyll~a~(pg~'\U2219'~cell^{-1})), limits=c(0,10))+
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19)))+
+  scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+chlafig
+```
+####Figure - holobiont
+```{r}
+subchla<-summarySE(phys, measurevar='Chla.cell', groupvars=c('Holobiont','Region','Time', "Species"), na.rm=TRUE, conf.interval = 0.95)
+subchla
+```
+####Figure - holobiont & treatment
+
+```{r}
+subchla2<-summarySE(phys, measurevar='Chla.cell', groupvars=c('Holobiont','Region','Treatment','Time',"Species"), na.rm=TRUE, conf.interval = 0.95)
+subchla2
+```
+```{r}
+#subpro2$Region <- factor(subpro2$Region, levels=c("Lizard","Heron"))
+subchla2$Time <- factor(subchla2$Time, levels=c("Before","During","After"))
+subchla2$Holobiont<- factor(subchla2$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+#phys$Region <- factor(phys$Region, levels=c("Lizard","Heron"))
+phys$Time <- factor(phys$Time, levels=c("Before","During","After"))
+phys$Holobiont<- factor(phys$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+chlafig3<-ggplot(subchla2, aes(y=Chla.cell, x=Time, color=Holobiont, shape=Treatment))+ 
+  geom_point(data=phys, aes(y=Chla.cell,x=Time, color=Holobiont,shape=Treatment),alpha=0.5,position=position_jitterdodge(0.05))+
+  geom_path(aes(group = interaction(Treatment,Holobiont), stat="identity"), position=position_dodge(0.1))+
+  facet_wrap(~Holobiont, nrow=1)+
+  geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  geom_errorbar(aes(ymin=Chla.cell-se, ymax=Chla.cell+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+  scale_y_continuous(expression(Chlorophyll~a~(pg~'\U2219'~cell^{-1})), limits=c(0,10))+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+chlafig3
+```
+
+####Figure - overall with holobiont dots
+```{r}
+allchla$Region <- factor(allchla$Region, levels=c("Lizard","Heron"))
+allchla$Time <- factor(allchla$Time, levels=c("Before","During","After"))
+#calavg$Region<- factor(calavg$Holobiont, levels =c("Lizard","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR", "Heron"))
+physplot$Region <- factor(physplot$Region, levels=c("Lizard","Heron"))
+physplot$Time <- factor(physplot$Time, levels=c("Before","During","After"))
+physplot$Holobiont<- factor(physplot$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","Stylophora_Heron","Pocillopora_Heron","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+chlafigholo<-ggplot(allchla, aes(y=Chla.cell, x=Time, color=Region,shape=Treatment))+ 
+  geom_jitter(data=physplot, aes(y=Chla.cell,x=Time, color=Holobiont, shape=Treatment), alpha=0.8, position=position_dodge(0.5))+
+  geom_point(size=3, position=position_dodge(0.3),stat="identity", color='black')+
+  facet_wrap(~Species)+
+  geom_errorbar(aes(ymin=Chla.cell-se, ymax=Chla.cell+se, width= 0.7),  position=position_dodge(0.3),stat="identity", color='black') +
+  geom_path(aes(group = interaction(Treatment,Species,Region), stat="identity"), position=position_dodge(0.3), color='black')+
+  scale_y_continuous(expression(Chlorophyll~a~(pg~'\U2219'~cell^{-1})), limits=c(0,10))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+chlafigholo
+```
+##Chlorophyll a per cm2
+```{r}
+allchlacm<-summarySE(phys, measurevar='Chla.cm2', groupvars=c('Species','Region','Time', "Treatment"), na.rm=TRUE, conf.interval = 0.95)
+allchlacm
+```
+####Stats
+```{r}
+chlacm.lm<- lme(Chla.cm2~Region*Species*Treatment*Time2,  random=~1|Site, data=phys, na.action = na.exclude)
+Anova(chlacm.lm)
+tukey<- emmeans(chlacm.lm, list(pairwise ~Region:Time2), adjust = "tukey", simple="Time2")
+tukey
+tukey<- emmeans(chlacm.lm, list(pairwise ~Species:Treatment), adjust = "tukey", simple="Treatment")
+tukey
+```
+```{r}
+chlacm.lm2<- lm(Chla.cm2~Holobiont*Treatment*Time2, data=phys, na.action = na.exclude)
+anova(chlacm.lm2)
+tukey<- emmeans(chlacm.lm2, list(pairwise ~Holobiont:Time2), adjust = "tukey", simple="Time2")
+tukey
+```
+```{r}
+allchlacm<-summarySE(phys, measurevar='Chla.cm2', groupvars=c('Region','Time','Species',"Treatment"), na.rm=TRUE, conf.interval = 0.95)
+allchlacm
+```
+
+```{r}
+allchlacm$Region <- factor(allchlacm$Region, levels=c("Lizard","Heron"))
+allchlacm$Time <- factor(allchlacm$Time, levels=c("Before","During","After"))
+chlafigcm<-ggplot(allchlacm, aes(y=Chla.cm2, x=Time, color=Region, group=interaction(Species,Time,Region)))+ 
+  geom_jitter(data=phys, aes(y=Chla.cm2,x=Time, color=Region),alpha=0.2,position=position_jitterdodge())+
+  geom_path(aes(group = interaction(Region), stat="identity"), position=position_dodge(0.6))+
+  facet_grid(~Species)+
+  geom_point(size=3, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=Chla.cm2-se, ymax=Chla.cm2+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Chlorophyll~a~(pg~'\U2219'~cm^{2})))+
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19)))+
+  scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+       strip.text = element_text(vjust=0.5, size=12, face="italic"))
+chlafigcm
+```
+
+```{r}
+subchlacm<-summarySE(phys, measurevar='Chla.cm2', groupvars=c('Holobiont','Region','Time','Species'), na.rm=TRUE, conf.interval = 0.95)
+subchlacm
+```
+
+
+####Figure - holobiont & treatment
+
+```{r}
+subchlacm2<-summarySE(phys, measurevar='Chla.cm2', groupvars=c('Holobiont','Treatment','Time',"Species"), na.rm=TRUE, conf.interval = 0.95)
+subchlacm2
+```
+```{r}
+#subpro2$Region <- factor(subpro2$Region, levels=c("Lizard","Heron"))
+subchlacm2$Time <- factor(subchlacm2$Time, levels=c("Before","During","After"))
+subchlacm2$Holobiont<- factor(subchlacm2$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+#phys$Region <- factor(phys$Region, levels=c("Lizard","Heron"))
+phys$Time <- factor(phys$Time, levels=c("Before","During","After"))
+physplot$Holobiont<- factor(physplot$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","Stylophora_Heron","C78a","Pocillopora_Heron","PdamC. latusorum","PdamC33a_sGBR"))
+chlafig3<-ggplot(subchlacm2, aes(y=Chla.cm2, x=Time, color=Holobiont, shape=Treatment))+ 
+  geom_point(data=phys, aes(y=Chla.cm2,x=Time, color=Holobiont,shape=Treatment),alpha=0.5,position=position_jitterdodge(0.05))+
+  geom_path(aes(group = interaction(Treatment,Holobiont), stat="identity"), position=position_dodge(0.1))+
+  facet_wrap(~Holobiont, nrow=1)+
+  geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  geom_errorbar(aes(ymin=Chla.cm2-se, ymax=Chla.cm2+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+  scale_y_continuous(expression(Chlorophyll~a~(pg~'\U2219'~cm^{2})))+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+chlafig3
+```
+
+```{r}
+allchlacm$Region <- factor(allchlacm$Region, levels=c("Lizard","Heron"))
+allchlacm$Time <- factor(allchlacm$Time, levels=c("Before","During","After"))
+#calavg$Region<- factor(calavg$Holobiont, levels =c("Lizard","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR", "Heron"))
+physplot$Region <- factor(physplot$Region, levels=c("Lizard","Heron"))
+physplot$Time <- factor(physplot$Time, levels=c("Before","During","After"))
+physplot$Holobiont<- factor(physplot$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","Stylophora_Heron","C78a","Pocillopora_Heron","PdamC. latusorum","PdamC33a_sGBR"))
+chlacmfigholo<-ggplot(allchlacm, aes(y=Chla.cm2, x=Time, color=Region,shape=Treatment))+ 
+  #geom_jitter(data=physplot, aes(y=Chla.cm2,x=Time, color=Holobiont, shape=Treatment), alpha=0.8, position=position_dodge(0.5))+
+  geom_point(size=3, position=position_dodge(0.3),stat="identity")+
+  facet_wrap(~Species)+
+  geom_errorbar(aes(ymin=Chla.cm2-se, ymax=Chla.cm2+se, width= 0.7),  position=position_dodge(0.3),stat="identity") +
+  geom_path(aes(group = interaction(Treatment,Species,Region), stat="identity"), position=position_dodge(0.3))+
+  scale_y_continuous(expression(Chlorophyll~a~(pg~'\U2219'~cm^{2})))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+   scale_color_manual("Region", values=c("Lizard"= "#f4a582","Heron"= "#4393c3"))+
+  #scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","C8 group"="#fddbc7","C8 groupH"="#fddbc7","Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+chlacmfigholo
+```
+
+#Isotope
+
+```{r}
+iso<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Lizard and Heron iso subset.csv", strip.white=T)
+iso$Region<-as.factor(iso$Region)
+iso$Species<- as.factor(iso$Species)
+iso$Treatment<-as.factor(iso$Treatment)
+iso$Time<-as.factor(iso$Time)
+iso$Holobiont<-as.factor(iso$Holobiont)
+iso
+```
+```{r}
+isoplot<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Lizard and Heron iso subset for ploting.csv", strip.white=T)
+isoplot$Region<-as.factor(isoplot$Region)
+isoplot$Species<- as.factor(isoplot$Species)
+isoplot$Treatment<-as.factor(isoplot$Treatment)
+isoplot$Time<-as.factor(isoplot$Time)
+isoplot$Holobiont<-as.factor(isoplot$Holobiont)
+isoplot
+```
+#Protein v. d15N
+```{r}
+physiso<- merge(iso, phys, by=c("Holobiont","Time","Region","Species","Treatment","Nubbin_ID"), all=T)
+physiso
+```
+```{r}
+lm_eqn <- function(df){
+    m <- lm(host_d15N ~ Protein.cm2, physiso);
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(unname(coef(m)[1]), digits = 2),
+              b = format(unname(coef(m)[2]), digits = 2),
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+}
+```
+
+
+
+```{r}
+#subpro2$Time <- factor(subpro2$Time, levels=c("Before","During","After"))
+physiso$Holobiont<- factor(physiso$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+#phys$Time <- factor(phys$Time, levels=c("Before","During","After"))
+#phys$Holobiont<- factor(phys$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+d15Nprotein<-ggplot(data=physiso, aes(y=host_d15N,x=Protein.cm2))+ 
+  geom_point()+
+  geom_text(x = 1, y = 5, label = lm_eqn(df), parse = TRUE)+
+  geom_smooth(method='lm')+
+  #facet_wrap(~Holobiont)+
+  #geom_path(aes(group = interaction(Treatment,Holobiont), stat="identity"), position=position_dodge(0.1))+
+  #facet_wrap(~Holobiont, nrow=1)+
+  #geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  #geom_errorbar(aes(ymin=Protein.cm2-se, ymax=Protein.cm2+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+  #scale_y_continuous(expression(Protein~density~(mg~'\U2219'~cm^{-2})), limits=c(0.3,2.2))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  scale_fill_brewer(palette = "RdBu")+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+d15Nprotein
+```
+```{r}
+unique(iso$Holobiont)
+```
+
+###Host d15N
+####Stats
+
+```{r}
+d15N.lm2<- lme(host_d15N~Region*Species*Treatment*Time2,random=~1|Site, data=physiso, na.action = na.exclude)
+Anova(d15N.lm2)
+tukey2<- emmeans(d15N.lm2, list(pairwise ~Region:Species:Time2), adjust = "tukey", simple="Time2")
+tukey2
+tukey3<- emmeans(d15N.lm2, list(pairwise ~Treatment), adjust = "tukey")
+tukey3
+```
+
+
+```{r}
+d15N.lm2<- lm(host_d15N~Holobiont*Treatment*Time2, data=physiso, na.action = na.exclude)
+anova(d15N.lm2)
+tukey2<- emmeans(d15N.lm2, list(pairwise ~Time2), adjust = "tukey")
+tukey2
+tukey3<- emmeans(d15N.lm2, list(pairwise ~Treatment), adjust = "tukey")
+tukey3
+```
+```{r}
+d15N.olr= polr(as.factor(host_d15N) ~ Holobiont*Treatment*Time2, data=physiso, Hess = TRUE, method = c("logistic"))
+summary(d15N.olr)
+```
+
+```{r}
+allhostd15N2<-summarySE(iso, measurevar='host_d15N', groupvars=c('Region','Treatment','Time',"Species"), na.rm=TRUE, conf.interval = 0.95)
+allhostd15N2
+```
+
+```{r}
+subhostd15N2<-summarySE(iso, measurevar='host_d15N', groupvars=c('Holobiont','Treatment','Time',"Species"), na.rm=TRUE, conf.interval = 0.95)
+subhostd15N2
+```
+####Figure - holobiont & treatment
+```{r}
+#subpro2$Region <- factor(subpro2$Region, levels=c("Lizard","Heron"))
+subhostd15N2$Time <- factor(subhostd15N2$Time, levels=c("Before","During","After"))
+subhostd15N2$Holobiont<- factor(subhostd15N2$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+#phys$Region <- factor(phys$Region, levels=c("Lizard","Heron"))
+iso$Time <- factor(iso$Time, levels=c("Before","During","After"))
+iso$Holobiont<- factor(iso$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+hostd15Nfig3<-ggplot(subhostd15N2, aes(y=host_d15N, x=Time, color=Holobiont, shape=Treatment))+ 
+  geom_point(data=iso, aes(y=host_d15N,x=Time, color=Holobiont,shape=Treatment),alpha=0.5,position=position_jitterdodge(0.05))+
+  geom_path(aes(group = interaction(Treatment,Holobiont), stat="identity"), position=position_dodge(0.1))+
+  facet_wrap(~Holobiont, nrow=1)+
+  geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  geom_errorbar(aes(ymin=host_d15N-se, ymax=host_d15N+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+  scale_y_continuous(expression(Host~delta^{15}~N~('\211')))+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+hostd15Nfig3
+```
+
+####Figure - overall with holobiont dots
+```{r}
+allhostd15N2$Region <- factor(allhostd15N2$Region, levels=c("Lizard","Heron"))
+allhostd15N2$Time <- factor(allhostd15N2$Time, levels=c("Before","During","After"))
+#calavg$Region<- factor(calavg$Holobiont, levels =c("Lizard","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR", "Heron"))
+isoplot$Region <- factor(isoplot$Region, levels=c("Lizard","Heron"))
+isoplot$Time <- factor(isoplot$Time, levels=c("Before","During","After"))
+isoplot$Holobiont<- factor(isoplot$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","Stylophora_Heron","C78a","Pocillopora_Heron","PdamC. latusorum","PdamC33a_sGBR"))
+d15Nfigholo<-ggplot(allhostd15N2, aes(y=host_d15N, x=Time, color=Region,shape=Treatment))+ 
+  #geom_jitter(data=isoplot, aes(y=host_d15N,x=Time, color=Holobiont, shape=Treatment), alpha=0.8, position=position_dodge(0.5))+
+  geom_point(size=3, position=position_dodge(0.3),stat="identity")+
+  facet_wrap(~Species)+
+  geom_errorbar(aes(ymin=host_d15N-se, ymax=host_d15N+se, width= 0.7),  position=position_dodge(0.3),stat="identity") +
+  geom_path(aes(group = interaction(Treatment,Species,Region), stat="identity"), position=position_dodge(0.3))+
+  scale_y_continuous(expression(Host~delta^{15}~N~('\211')))+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+   scale_color_manual("Region", values=c("Lizard"= "#f4a582","Heron"= "#4393c3"))+
+  #scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","C8 group"="#fddbc7","C8 groupH"="#fddbc7","Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+d15Nfigholo
+```
+###Host d13C
+
+####Stats
+```{r}
+d13C.lm2<- lme(host_d13C~Region*Species*Treatment*Time2,random=~1|Site, data=physiso, na.action = na.exclude)
+Anova(d13C.lm2, type=3)
+tukey2<- emmeans(d13C.lm2, list(pairwise ~Region:Species:Time2), adjust = "tukey", simple="Time2")
+tukey2
+tukey3<- emmeans(d13C.lm2, list(pairwise ~Treatment), adjust = "tukey")
+tukey3
+```
+
+```{r}
+subhostd13C2<-summarySE(iso, measurevar='host_d13C', groupvars=c('Holobiont','Treatment','Time',"Species"), na.rm=TRUE, conf.interval = 0.95)
+subhostd13C2
+```
+
+
+```{r}
+allhostd13C<-summarySE(iso, measurevar='host_d13C', groupvars=c('Region','Treatment','Time',"Species"), na.rm=TRUE, conf.interval = 0.95)
+allhostd13C
+```
+
+####Figure - holobiont & treatment
+```{r}
+#subpro2$Region <- factor(subpro2$Region, levels=c("Lizard","Heron"))
+subhostd13C2$Time <- factor(subhostd13C2$Time, levels=c("Before","During","After"))
+subhostd13C2$Holobiont<- factor(subhostd13C2$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+#phys$Region <- factor(phys$Region, levels=c("Lizard","Heron"))
+iso$Time <- factor(iso$Time, levels=c("Before","During","After"))
+iso$Holobiont<- factor(iso$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+hostd13Cfig3<-ggplot(subhostd13C2, aes(y=host_d13C, x=Time, color=Holobiont, shape=Treatment))+ 
+  geom_point(data=iso, aes(y=host_d13C,x=Time, color=Holobiont,shape=Treatment),alpha=0.5,position=position_jitterdodge(0.05))+
+  geom_path(aes(group = interaction(Treatment,Holobiont), stat="identity"), position=position_dodge(0.1))+
+  facet_wrap(~Holobiont, nrow=1)+
+  geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  geom_errorbar(aes(ymin=host_d13C-se, ymax=host_d13C+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+  scale_y_continuous(expression(Host~delta^{13}~C~('\211')))+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+hostd13Cfig3
+```
+
+####Figure - overall with holobiont dots
+```{r}
+allhostd13C$Region <- factor(allhostd13C$Region, levels=c("Lizard","Heron"))
+allhostd13C$Time <- factor(allhostd13C$Time, levels=c("Before","During","After"))
+#calavg$Region<- factor(calavg$Holobiont, levels =c("Lizard","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR", "Heron"))
+isoplot$Region <- factor(isoplot$Region, levels=c("Lizard","Heron"))
+isoplot$Time <- factor(isoplot$Time, levels=c("Before","During","After"))
+isoplot$Holobiont<- factor(isoplot$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","Stylophora_Heron","C78a","Pocillopora_Heron","PdamC. latusorum","PdamC33a_sGBR"))
+d13Cfigholo<-ggplot(allhostd13C, aes(y=host_d13C, x=Time, color=Region,shape=Treatment))+ 
+  #geom_jitter(data=isoplot, aes(y=host_d13C,x=Time, color=Holobiont, shape=Treatment), alpha=0.8, position=position_dodge(0.5))+
+  geom_point(size=3, position=position_dodge(0.3),stat="identity")+
+  facet_wrap(~Species)+
+  geom_errorbar(aes(ymin=host_d13C-se, ymax=host_d13C+se, width= 0.7),  position=position_dodge(0.3),stat="identity") +
+  geom_path(aes(group = interaction(Treatment,Species,Region), stat="identity"), position=position_dodge(0.3))+
+  scale_y_continuous(expression(Host~delta^{13}~C~('\211')))+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+   scale_color_manual("Region", values=c("Lizard"= "#f4a582","Heron"= "#4393c3"))+
+  #scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","C8 group"="#fddbc7","C8 groupH"="#fddbc7","Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+d13Cfigholo
+```
+
+###Host C:N
+####Stats
+```{r}
+CN.lm2<- lme(host_CN_molar~Region*Species*Treatment*Time2,random=~1|Site, data=physiso, na.action = na.exclude)
+Anova(CN.lm2)
+tukey<- emmeans(CN.lm2, list(pairwise ~Species:Treatment:Time2), adjust = "tukey", simple="Time2")
+tukey
+tukey<- emmeans(CN.lm2, list(pairwise ~Region:Species:Time2), adjust = "tukey", simple="Time2")
+tukey
+```
+```{r}
+allhostCN<-summarySE(iso, measurevar='host_CN_molar', groupvars=c('Region','Treatment','Time',"Species"), na.rm=TRUE, conf.interval = 0.95)
+allhostCN
+```
+
+```{r}
+subhostCN2<-summarySE(iso, measurevar='host_CN_molar', groupvars=c('Holobiont','Treatment','Time',"Species"), na.rm=TRUE, conf.interval = 0.95)
+subhostCN2
+```
+####Figure - holobiont & treatment
+```{r}
+#subpro2$Region <- factor(subpro2$Region, levels=c("Lizard","Heron"))
+subhostCN2$Time <- factor(subhostCN2$Time, levels=c("Before","During","After"))
+subhostCN2$Holobiont<- factor(subhostCN2$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+#phys$Region <- factor(phys$Region, levels=c("Lizard","Heron"))
+iso$Time <- factor(iso$Time, levels=c("Before","During","After"))
+iso$Holobiont<- factor(iso$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+hostCNfig3<-ggplot(subhostCN2, aes(y=host_CN_molar, x=Time, color=Holobiont, shape=Treatment))+ 
+  geom_point(data=iso, aes(y=host_CN_molar,x=Time, color=Holobiont,shape=Treatment),alpha=0.5,position=position_jitterdodge(0.05))+
+  geom_path(aes(group = interaction(Treatment,Holobiont), stat="identity"), position=position_dodge(0.1))+
+  facet_wrap(~Holobiont, nrow=1)+
+  geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  geom_errorbar(aes(ymin=host_CN_molar-se, ymax=host_CN_molar+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+  scale_y_continuous(expression(Host~C:N))+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+hostCNfig3
+```
+
+####Figure - overall with holobiont dots
+```{r}
+allhostCN$Region <- factor(allhostCN$Region, levels=c("Lizard","Heron"))
+allhostCN$Time <- factor(allhostCN$Time, levels=c("Before","During","After"))
+#calavg$Region<- factor(calavg$Holobiont, levels =c("Lizard","Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR", "Heron"))
+isoplot$Region <- factor(isoplot$Region, levels=c("Lizard","Heron"))
+isoplot$Time <- factor(isoplot$Time, levels=c("Before","During","After"))
+isoplot$Holobiont<- factor(isoplot$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","Stylophora_Heron","C78a","Pocillopora_Heron","PdamC. latusorum","PdamC33a_sGBR"))
+CNfigholo<-ggplot(allhostCN, aes(y=host_CN_molar, x=Time, color=Region,shape=Treatment))+ 
+  #geom_jitter(data=isoplot, aes(y=host_CN_molar,x=Time, color=Holobiont, shape=Treatment), alpha=0.8, position=position_dodge(0.5))+
+  geom_point(size=3, position=position_dodge(0.3),stat="identity")+
+  facet_wrap(~Species)+
+  geom_errorbar(aes(ymin=host_CN_molar-se, ymax=host_CN_molar+se, width= 0.7),  position=position_dodge(0.3),stat="identity") +
+  geom_path(aes(group = interaction(Treatment,Species,Region), stat="identity"), position=position_dodge(0.3))+
+   scale_y_continuous(expression(Host~C:N))+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+   scale_color_manual("Region", values=c("Lizard"= "#f4a582","Heron"= "#4393c3"))+
+  #scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","C8 group"="#fddbc7","C8 groupH"="#fddbc7","Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+CNfigholo
+```
+##Host %C
+```{r}
+iso2<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/iso revised3.csv", strip.white=T)
+iso2$Region<-as.factor(iso2$Region)
+iso2$Genus<- as.factor(iso2$Genus)
+iso2$Site.x<- as.factor(iso2$Site.x)
+iso2$Treatment<-as.factor(iso2$Treatment)
+iso2$Time<-as.factor(iso2$Time)
+iso2$Holobiont_ID<-as.factor(iso2$Holobiont_ID)
+iso2
+```
+
+####Stats
+```{r}
+hostC.lm2<- lm(C_percent.weight.num~Region*Genus*Treatment*Time, data=iso2, na.action = na.exclude)
+Anova(hostC.lm2)
+tukey<- emmeans(hostC.lm2, list(pairwise ~Region:Genus), adjust = "tukey", simple="Genus")
+tukey
+tukey<- emmeans(hostC.lm2, list(pairwise ~Time), adjust = "tukey")
+tukey
+```
+```{r}
+allhosthostC<-summarySE(iso2, measurevar='C_percent.weight.num', groupvars=c('Region','Treatment','Time',"Genus"), na.rm=TRUE, conf.interval = 0.95)
+allhosthostC
+```
+
+```{r}
+subhosthostC2<-summarySE(iso2, measurevar='C_percent.weight.num', groupvars=c('Holobiont_ID','Treatment','Time',"Genus"), na.rm=TRUE, conf.interval = 0.95)
+subhosthostC2
+```
+####Figure - holobiont & treatment
+```{r}
+#subpro2$Region <- factor(subpro2$Region, levels=c("Lizard","Heron"))
+subhosthostC2$Time <- factor(subhosthostC2$Time, levels=c("Before","During","After"))
+subhosthostC2$Holobiont_ID<- factor(subhosthostC2$Holobiont_ID, levels =c("Pver(OPI40), C. pacificum","Pver_Pbairdi, C. pacificum","Pacuta, C. pacificum","S. pistillata, C8 group","S. pistillata, C8 groupH","S. pistillata, C78a","Pdam, C. latusorum","Pdam, C33a_sGBR"))
+#phys$Region <- factor(phys$Region, levels=c("Lizard","Heron"))
+iso2$Time <- factor(iso2$Time, levels=c("Before","During","After"))
+iso2$Holobiont_ID<- factor(iso2$Holobiont_ID, levels =c("Pver(OPI40), C. pacificum","Pver_Pbairdi, C. pacificum","Pacuta, C. pacificum","S. pistillata, C8 group","S. pistillata, C8 groupH","S. pistillata, C78a","Pdam, C. latusorum","Pdam, C33a_sGBR"))
+hosthostCfig3<-ggplot(subhosthostC2, aes(y=C_percent.weight.num, x=Time, color=Holobiont_ID, shape=Treatment))+ 
+  geom_point(data=iso2, aes(y=C_percent.weight.num,x=Time, color=Holobiont_ID,shape=Treatment),alpha=0.5,position=position_jitterdodge(0.05))+
+  geom_path(aes(group = interaction(Treatment,Holobiont_ID), stat="identity"), position=position_dodge(0.1))+
+  facet_wrap(~Holobiont_ID, nrow=1)+
+  geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  geom_errorbar(aes(ymin=C_percent.weight.num-se, ymax=C_percent.weight.num+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+  scale_y_continuous(expression(Host~C))+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+hosthostCfig3
+```
+
+####Figure - overall with holobiont dots
+```{r}
+allhosthostC$Region <- factor(allhosthostC$Region, levels=c("Lizard","Heron"))
+allhosthostC$Time <- factor(allhosthostC$Time, levels=c("Before","During","After"))
+iso2$Region <- factor(iso2$Region, levels=c("Lizard","Heron"))
+iso2$Time <- factor(iso2$Time, levels=c("Before","During","After"))
+hostCfigholo<-ggplot(allhosthostC, aes(y=C_percent.weight.num, x=Time, color=Region,shape=Treatment))+ 
+  #geom_jitter(data=iso2, aes(y=C_percent.weight.num,x=Time, color=Holobiont_ID, shape=Treatment), alpha=0.8, position=position_dodge(0.5))+
+  geom_point(size=3, position=position_dodge(0.3),stat="identity")+
+  facet_wrap(~Genus)+
+  geom_errorbar(aes(ymin=C_percent.weight.num-se, ymax=C_percent.weight.num+se, width= 0.7),  position=position_dodge(0.3),stat="identity") +
+  geom_path(aes(group = interaction(Treatment,Genus,Region), stat="identity"), position=position_dodge(0.3))+
+   scale_y_continuous(expression(Host~C))+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+   scale_color_manual("Region", values=c("Lizard"= "#f4a582","Heron"= "#4393c3"))+
+  #scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"="#fddbc7","Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061", "NA"='white'))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+hostCfigholo
+```
+```{r}
+hostC_both<-cowplot::plot_grid(hostCfigholo,hosthostCfig3,nrow=2, ncol=1, align="h", axis = "b")  
+hostC_both
+```
+
+#Physiology composite figure
+```{r}
+library(cowplot)
+physall<-cowplot::plot_grid(proteinfigholo,symfigholo,d13Cfigholo,chlacmfigholo,d15Nfigholo,pamfigholo,hostCfigholo,CNfigholo,nrow=4, ncol=2, align="h", axis = "b")  
+physall
+```
+```{r}
+colnames(phys)
+colnames(iso)
+```
+#Protein v. d15N
+```{r}
+physiso<- merge(iso, phys, by=c("Holobiont","Time","Region","Species","Treatment","Nubbin_ID"), all=T)
+physiso
+```
+```{r}
+#subpro2$Time <- factor(subpro2$Time, levels=c("Before","During","After"))
+physiso$Holobiont<- factor(physiso$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+#phys$Time <- factor(phys$Time, levels=c("Before","During","After"))
+#phys$Holobiont<- factor(phys$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+d15Nprotein<-ggplot(data=physiso, aes(y=host_d15N,x=Protein.cm2, color=Holobiont,fill=Holobiont,shape=Treatment))+ 
+  geom_point()+
+  #geom_smooth()+
+  #facet_wrap(~Holobiont)+
+  #geom_path(aes(group = interaction(Treatment,Holobiont), stat="identity"), position=position_dodge(0.1))+
+  #facet_wrap(~Holobiont, nrow=1)+
+  #geom_point(size=3, position=position_dodge(0.1),stat="identity")+
+  #geom_errorbar(aes(ymin=Protein.cm2-se, ymax=Protein.cm2+se, width= 0.5),  position=position_dodge(0.1),stat="identity") +
+  #scale_y_continuous(expression(Protein~density~(mg~'\U2219'~cm^{-2})), limits=c(0.3,2.2))+ 
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  scale_fill_brewer(palette = "RdBu")+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face="italic"))
+d15Nprotein
+```
+
+```{r}
+library(cowplot)
+bwandvol<-cowplot::plot_grid(BWfig, volfig,nrow=2,  align="h", axis = "bt")  
+bwandvol
+```
+```{r}
+library(lme4)
+protein.s.lme<- lme(Protein.cm2~Region*Treatment*Species+Time,random=~1|Nubbin, data=phys, na.action = na.exclude)
+par(mfrow=c(2,3))
+plot(protein.s.lme, ask=FALSE, which=1:6)
+Anova(protein.s.lme, type=3)
+library(emmeans)
+tukey<- emmeans(protein.s.lme, list(pairwise ~ Region:Treatment:Species), adjust = "tukey")
+tukey
+plot(allEffects(protein.s.lme,partial.resid=TRUE))
+```
+
+```{r}
+library(lme4)
+dino.p.lme<- lme(Dino.density~Region*Treatment*Species+Time,random=~1|Nubbin, data=phys, na.action = na.exclude)
+par(mfrow=c(2,3))
+plot(dino.p.lme, ask=FALSE, which=1:6)
+Anova(dino.p.lme, type=3)
+library(emmeans)
+tukey<- emmeans(dino.p.lme, list(pairwise ~Time), adjust = "tukey")
+tukey
+plot(allEffects(dino.p.lme,partial.resid=TRUE))
+```
+```{r}
+library(lme4)
+chla.lme<- lme(Chla.cell~Region*Treatment*Species+Time,random=~1|Nubbin, data=phys, na.action = na.exclude)
+par(mfrow=c(2,3))
+plot(chla.lme, ask=FALSE, which=1:6)
+Anova(chla.lme, type=3)
+library(emmeans)
+tukey<- emmeans(chla.lme, list(pairwise ~Time), adjust = "tukey")
+tukey
+plot(allEffects(chla.lme,partial.resid=TRUE))
+```
+```{r}
+physchange<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/All physiology change matching only.csv", strip.white=T)
+physchange$Region<-as.factor(physchange$Region)
+physchange$Species<- as.factor(physchange$Species)
+physchange$Treatment<-as.factor(physchange$Treatment)
+```
+
+```{r}
+#physchange$Time<-as.factor(physchange$Time)
+physchange
+```
+
+```{r}
+ah<- merge(all, physchange, by=c("Region", "Site", "Species", "Treatment", "Nubbin.ID"), all=T)
+ah
+```
+
+```{r}
+protein.lme <- lme(Stanprotein ~ Region*Species*Treatment+stanvol+stanBW, 
+                   random=~1|Rack.., weights = varIdent(form = ~1 | Species * Treatment), data=ah, method="ML", na.action = na.exclude)
+
+#summary(protein.lme) 
+
+#Model selection stepAIC
+protein.lme.auto <-MASS::stepAIC(protein.lme)
+
+#summary(protein.lme.auto)
+#take forumula for best fit model, and rerun lme, with these predictors and relationships, but this time use method = "REML"
+protein.lme.auto.best <- lme(Stanprotein ~ Region + Species + Treatment + stanvol + Region:Species + 
+    Region:Treatment + Species:Treatment + Region:Species:Treatment, random=~1|Rack.., weights = varIdent(form = ~1 | Species * Treatment), data=ah, method="REML", na.action = na.exclude)
+
+#model fit:
+R2(protein.lme.auto.best)  
+
+#model diagnostics
+plot(protein.lme.auto.best)
+qqnorm(protein.lme.auto.best, abline = c(0,1))
+summary(protein.lme.auto.best)
+Anova(protein.lme.auto.best)
+plot(allEffects(protein.lme.auto.best,partial.resid=TRUE))
+
+```
+
+```{r}
+dino.lme <- lme(Standino ~ Region*Species*Treatment+Stanprotein, 
+                   random=~1|Rack.., weights = varIdent(form = ~1 | Species * Treatment), data=ah, method="ML", na.action = na.exclude)
+
+#summary(dino.lme) 
+
+#Model selection stepAIC
+dino.lme.auto <-MASS::stepAIC(dino.lme)
+
+#summary(dino.lme.auto)
+#take forumula for best fit model, and rerun lme, with these predictors and relationships, but this time use method = "REML"
+dino.lme.auto.best <- lme(Standino ~ Region + Species + Treatment + Stanprotein + Region:Species + 
+    Species:Treatment, random=~1|Rack.., weights = varIdent(form = ~1 | Species * Treatment), data=ah, method="REML", na.action = na.exclude)
+
+#model fit:
+R2(dino.lme.auto.best)  
+
+#model diagnostics
+plot(dino.lme.auto.best)
+qqnorm(dino.lme.auto.best, abline = c(0,1))
+summary(dino.lme.auto.best)
+Anova(dino.lme.auto.best, type=3)
+plot(allEffects(dino.lme.auto.best,partial.resid=TRUE))
+```
+```{r}
+chla.lme <- lme(Stanchla ~ Region*Species*Treatment+Standino, 
+                   random=~1|Rack.., weights = varIdent(form = ~1 | Species * Treatment), data=ah, method="ML", na.action = na.exclude)
+
+#summary(chla.lme) 
+
+#Model selection stepAIC
+chla.lme.auto <-MASS::stepAIC(chla.lme)
+
+#summary(chla.lme.auto)
+#take forumula for best fit model, and rerun lme, with these predictors and relationships, but this time use method = "REML"
+chla.lme.auto.best <- lme(Stanchla ~ Region*Species*Treatment+Standino, random=~1|Rack.., weights = varIdent(form = ~1 | Species * Treatment), data=ah, method="REML", na.action = na.exclude)
+
+#model fit:
+R2(chla.lme.auto.best)  
+
+#model diagnostics
+plot(chla.lme.auto.best)
+qqnorm(chla.lme.auto.best, abline = c(0,1))
+summary(chla.lme.auto.best)
+Anova(chla.lme.auto.best, type=3)
+plot(allEffects(chla.lme.auto.best,partial.resid=TRUE))
+
+#Juveniles have more chla than adults, chla decreases with an increase in dino
+```
+
+
+#Tagged colony
+```{r}
+tagged<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Tagged coral colonies Lizard and Heron.csv", strip.white=T)
+tagged$Region<-as.factor(tagged$Region)
+tagged$Treatment<-as.factor(tagged$Treatment)
+tagged
+```
+```{r}
+colonybleach<- summarySE(tagged, measurevar='Color.score', groupvars=c('Region','Treatment'), na.rm=TRUE, conf.interval = 0.95)
+colonybleach
+```
+
+```{r}
+colonydead<-summarySE(tagged, measurevar='Percentage.colony.mortality....', groupvars=c('Region','Treatment'), na.rm=TRUE, conf.interval = 0.95)
+colonydead
+```
+
+```{r}
+library(lme4)
+tag.glmer<- glmer(Survivorship..1.0.~Region*Treatment+(1|Site), data=tagged,  na.action = na.exclude, family='binomial')
+r.squaredGLMM(tag.glmer)
+Anova(tag.glmer, type=3)
+transtukey<- emmeans(tag.glmer, list(pairwise ~ Treatment), adjust = "tukey")
+transtukey
+```
+```{r}
+library(lme4)
+tag.lmer<- lme(Color.score~Region*Treatment, random=~1|Site, data=tagged,  na.action = na.exclude)
+r.squaredGLMM(tag.glmer)
+Anova(tag.lmer, type=3)
+transtukey<- emmeans(tag.lmer, list(pairwise ~ Treatment), adjust = "tukey")
+transtukey
+plot(allEffects(tag.lmer))
+```
+```{r}
+library(lme4)
+tag.lmer2<- lme(Percentage.colony.mortality....~Region*Treatment, random=~1|Site, data=tagged,  na.action = na.exclude)
+r.squaredGLMM(tag.lmer2)
+Anova(tag.lmer2, type=3)
+transtukey<- emmeans(tag.lmer2, list(pairwise ~ Region*Treatment), adjust = "tukey")
+transtukey
+plot(allEffects(tag.lmer2))
+```
+
+```{r}
+colsur<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Survivorship of found tagged coral colonies.csv", strip.white=T)
+colsur$Region<-as.factor(colsur$Region)
+colsur$Time<-as.factor(colsur$Time)
+colsur$Treatment<-as.factor(colsur$Treatment)
+colsur
+```
+
+
+```{r}
+colsur$Region <- factor(colsur$Region, levels=c("Lizard","Heron"))
+colsur$Time <- factor(colsur$Time, levels=c("Before","During","After"))
+colonysurv<-ggplot(colsur, aes(y=Survivorship, x=Time, shape=Treatment, color=Region, group=interaction(Species,Region,Treatment)))+ 
+  geom_path(aes(group = interaction(Species,Region,Treatment), stat="identity"), position=position_dodge(0.6))+
+  #facet_grid(~Species)+
+  geom_point(size=5, position=position_dodge(width=0.5),stat="identity")+
+  #geom_errorbar(aes(ymin=Survival-se, ymax=Survival+se, width= 0.5), position=position_dodge2( preserve = "single"),stat="identity") +
+  scale_y_continuous(expression(Survivorship~("%")), limits=c(0,100))+  
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4)))+
+  scale_color_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position=c(0.15,0.25),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+colonysurv
+```
+
+
+```{r}
+coldead<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Average percent dead of found coral colonies.csv", strip.white=T)
+coldead$Region<-as.factor(coldead$Region)
+coldead$Time<-as.factor(coldead$Time)
+#coldead$Species<-as.factor(coldead$Species)
+coldead$Treatment<-as.factor(coldead$Treatment)
+coldead
+```
+
+```{r}
+coldead<-summarySE(coldead, measurevar="Percent.dead", groupvars=c("Region","Species","Time","Treatment"), na.rm=TRUE)
+coldead
+```
+```{r}
+coldead$Region <- factor(coldead$Region, levels=c("Lizard","Heron"))
+coldead$Time <- factor(coldead$Time, levels=c("Before","During","After"))
+coldeadfig<-ggplot(coldead, aes(y=Percent.dead, x=Time, shape=Treatment,color=Region, group=interaction(Species,Region,Treatment)))+ 
+  #geom_jitter(data=tagged, aes(y=Percentage.colony.mortality....,x=Time, color=Region),alpha=0.2,position=position_jitterdodge())+
+  geom_path(aes(group = interaction(Species,Region,Treatment), stat="identity"), position=position_dodge(0.6))+
+  #facet_grid(~Species)+
+  geom_point(size=5, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=Percent.dead-se, ymax=Percent.dead+se, width= 0.5), position=position_dodge(0.6),stat="identity") +
+  scale_y_continuous(expression(Partial~mortality~("%")), limits=c(0,100))+  
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4)))+
+  scale_color_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+coldeadfig
+```
+```{r}
+colcolor<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Color score of tagged colonies during and after.csv", strip.white=T)
+colcolor$Region<-as.factor(colcolor$Region)
+colcolor$Time<-as.factor(colcolor$Time)
+colcolor$Treatment<-as.factor(colcolor$Treatment)
+colcolor
+```
+
+```{r}
+colcolor$Region <- factor(colcolor$Region, levels=c("Lizard","Heron"))
+colcolor$Time <- factor(colcolor$Time, levels=c("During","After"))
+colcolorfig<-ggplot(colcolor, aes(y=Color, x=Time, shape=Treatment,color=Region, group=interaction(Species,Region,Treatment)))+ 
+  #geom_jitter(data=tagged, aes(y=Percentage.colony.mortality....,x=Time, color=Region),alpha=0.2,position=position_jitterdodge())+
+  geom_path(aes(group = interaction(Species,Region,Treatment), stat="identity"), position=position_dodge(0.6))+
+  #facet_grid(~Species)+
+  geom_point(size=5, position=position_dodge(width=0.5),stat="identity")+
+  geom_errorbar(aes(ymin=Color-se, ymax=Color+se, width= 0.2), position=position_dodge(0.5),stat="identity") +
+  scale_y_continuous(expression(Bleaching~severity), limits=c(1,6), breaks=c(0,1,2,3,4,5,6))+  
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4)))+
+  scale_color_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position = "none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+colcolorfig
+```
+
+```{r}
+library(cowplot)
+colonyboth<-plot_grid(colonysurv,coldeadfig,colcolorfig, nrow=2,ncol=3,  align="h", axis = "bt")  
+colonyboth
+```
+
+#Multivariate - physiology
+####All
+```{r}
+mds<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Phys and iso MDS subset.csv", strip.white=T)
+#mds$Date<- as.Date(mds$Date, format = "%Y-%m-%d")
+mds$Time<-as.factor(mds$Time)
+mds$Holobiont<-as.factor(mds$Holobiont)
+mds$Genus<-as.factor(mds$Genus)
+mds$Nubbin_ID<-as.factor(mds$Nubbin_ID)
+mds$Treatment<-as.factor(mds$Treatment)
+mds
+```
+
+```{r}
+colnames(mds)
+#scale(mds[,(7:13)])
+```
+```{r}
+library(vegan)
+all.mds<- metaMDS(mds[,(8:14)], k=2)
+all.mds$stress
+plot(all.mds)
+```
+
+```{r}
+library(vegan)
+mds.adonis<-adonis2(mds[,(8:14)] ~Time*Treatment*Region*Genus, data=mds, permutations = 9999)
+mds.adonis
+```
+
+```{r}
+library(pairwiseAdonis)
+pairwise.adonis2(mds[,(8:14)] ~Time, data=mds, permutations = 9999, na.rm=T)
+
+funfuns::pairwise.adonis(mds[,(8:14)], factors= c(Time, Treatment, Region), sim.method = "bray",p.adjust.m = "none",permutations = 9999)
+```
+
+
+```{r}
+library(vegan)
+mds.rda<- rda(mds[,(8:14)], na.action= na.omit, scale=TRUE)
+```
+
+```{r}
+biplot(mds.rda, scaling=1, main='Scaling')
+screeplot(mds.rda)
+abline(a=1, b=0)
+```
+
+```{r}
+pca.sites.scores<- as.data.frame(scores(mds.rda, display='sites'))
+pca.sites.scores<- data.frame(pca.sites.scores, mds)
+pca.species.scores<- as.data.frame(scores(mds.rda, display='species'))
+pca.species.scores$Species<- rownames(pca.species.scores)
+pca.species.scores
+```
+```{r}
+eig<-eigenvals(mds.rda)
+eig
+```
+####Figure
+```{r}
+pca.sites.scores$Holobiont<- factor(pca.sites.scores$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+pca.sites.scores$Time <- factor(pca.sites.scores$Time, levels=c("Before","During/After"))
+g<-ggplot()+
+  geom_point(data=pca.sites.scores, aes(y=PC2, x=PC1, color=Holobiont, shape=Treatment), size=3, alpha=0.8)+
+  facet_wrap(~Time)+
+  geom_hline(yintercept = 0, linetype = 2, alpha = 0.8, color = "darkgray") + 
+  geom_vline(xintercept = 0, linetype = 2, alpha = 0.8, color = "darkgray") +
+  geom_segment(data=pca.species.scores, aes(y=0, x=0, yend=PC2, xend=PC1), arrow=arrow(length=unit(0.3, 'lines')),color='black', linetype='solid',alpha=0.9)+
+  geom_text(data=pca.species.scores, aes(y=PC2, x=PC1, label=Species), color="black")+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_brewer(palette = "RdBu")+
+  #scale_color_manual("Year", values=c("2019"='coral2',"2020"='paleturquoise2',"2021"='darkslategray4'))+ #Manually choose the colors 
+ #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19),"NA"=(pch=0)))+  
+  #scale_shape_manual("Genus", values=c("Pocillopora"=(pch=8),"Stylophora"=(pch=16)))+ #Manually choose the colors
+  scale_x_continuous(limits=c(-3,3),paste(names(eig[1]), sprintf('(%0.1f%% explained var.)', 100 * eig[1]/sum(eig))))+
+  scale_y_continuous(paste(names(eig[2]), sprintf('(%0.1f%% explained var.)', 100 * eig[2]/sum(eig))), limits=c(-1.5,1))+
+  scale_color_brewer(palette = "RdBu")+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_text(size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12))
+g
+```
+####Before
+```{r}
+mdsbefore<-dplyr::filter(mds, Time== c("Before"))
+row.has.na <- apply(mdsbefore[,(8:17)], 1, function(x){any(is.na(x))})
+mdsbefore.filtered <- mdsbefore[!row.has.na,]
+mdsbefore.filtered
+```
+
+```{r}
+colnames(mdsbefore.filtered)
+#scale(mds[,(7:13)])
+```
+
+```{r}
+library(vegan)
+mdsbefore.adonis<-adonis2(mdsbefore.filtered[,(8:17)] ~Genus*Treatment*Region, data=mdsbefore.filtered, permutations = 9999)
+mdsbefore.adonis
+```
+
+```{r}
+library(pairwiseAdonis)
+pairwise.mds<-pairwise.adonis2(mdsbefore.filtered[,(8:17)] ~Genus*Treatment*Region, data=mdsbefore.filtered, permutations = 9999, na.rm=T)
+pairwise.mds
+```
+
+
+```{r}
+library(vegan)
+mdsbefore.rda<- rda(mdsbefore.filtered[,(8:17)], na.action= na.omit, scale=TRUE)
+```
+
+```{r}
+biplot(mdsbefore.rda, scaling=1, main='Scaling')
+```
+
+```{r}
+pca.sites.scores<- as.data.frame(scores(mdsbefore.rda, display='sites'))
+pca.sites.scores<- data.frame(pca.sites.scores, mdsbefore.filtered)
+pca.species.scores<- as.data.frame(scores(mdsbefore.rda, display='species'))
+pca.species.scores$Species<- rownames(pca.species.scores)
+pca.species.scores
+```
+```{r}
+eig<-eigenvals(mdsbefore.rda)
+eig
+```
+
+```{r}
+pca.sites.scores$Holobiont<- factor(pca.sites.scores$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+#pca.sites.scores$Time <- factor(pca.sites.scores$Time, levels=c("Before","During","After"))
+g<-ggplot()+
+  #geom_polygon(data=veg.hull, aes(y=PC2, x=PC1,color=Holobiont, fill=Holobiont), alpha=0.1, size=.5)+
+  geom_point(data=pca.sites.scores, aes(y=PC2, x=PC1, color=Holobiont, shape=Treatment), size=3, alpha=0.8)+
+  geom_hline(yintercept = 0, linetype = 2, alpha = 0.8, color = "darkgray") + 
+  geom_vline(xintercept = 0, linetype = 2, alpha = 0.8, color = "darkgray") +
+  geom_segment(data=pca.species.scores, aes(y=0, x=0, yend=PC2, xend=PC1), arrow=arrow(length=unit(0.3, 'lines')),color='black', linetype='solid',alpha=0.9)+
+  geom_text(data=pca.species.scores, aes(y=PC2, x=PC1, label=Species), color="black")+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+   scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","C8 group"="#fddbc7","C8 groupH"="darkgray","Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4),"NA"=(pch=0)))+  
+  scale_x_continuous(limits=c(-2.5,2.5),paste(names(eig[1]), sprintf('(%0.1f%% explained var.)', 100 * eig[1]/sum(eig))))+
+  scale_y_continuous(limits=c(-1.5,1.5),paste(names(eig[2]), sprintf('(%0.1f%% explained var.)', 100 * eig[2]/sum(eig))))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_text(size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        panel.background= element_rect(fill=NA, color='black'),
+        legend.position ="none",
+        strip.text = element_text(size=12, face="italic"))
+g
+```
+```{r}
+veg.hull= pca.sites.scores %>% group_by(Holobiont) %>%
+  do({
+    x=.
+    x[chull(x$PC1, x$PC2),]
+  })
+```
+
+```{r}
+g+ geom_polygon(data=veg.hull, aes(y=PC2, x=PC1,color=Holobiont, fill=Holobiont), alpha=0.1, size=.5)+
+  scale_fill_brewer(palette = "RdBu")
+```
+
+
+###During
+```{r}
+mdsduring<-dplyr::filter(mds, Time== c("During/After"), Region ==c("Lizard"))
+#row.has.na <- apply(mdsduring[,(7:15)], 1, function(x){any(is.na(x))})
+#mdsduring.filtered <- mdsduring[!row.has.na,]
+#mdsduring.filtered
+```
+
+```{r}
+colnames(mdsduring)
+#scale(mds[,(7:13)])
+```
+
+```{r}
+library(vegan)
+mdsduring.rda<- rda(mdsduring[,(8:14)], na.action= na.omit, scale=TRUE)
+```
+
+```{r}
+biplot(mdsduring.rda, scaling=1, main='Scaling')
+```
+
+```{r}
+pca.sites.scores<- as.data.frame(scores(mdsduring.rda, display='sites'))
+pca.sites.scores<- data.frame(pca.sites.scores, mdsduring)
+pca.species.scores<- as.data.frame(scores(mdsduring.rda, display='species'))
+pca.species.scores$Species<- rownames(pca.species.scores)
+pca.species.scores
+```
+```{r}
+eig<-eigenvals(mdsduring.rda)
+eig
+```
+
+```{r}
+#pca.sites.scores$Time <- factor(pca.sites.scores$Time, levels=c("during","During","After"))
+pca.sites.scores$Holobiont<- factor(pca.sites.scores$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+gduring<-ggplot()+
+  geom_point(data=pca.sites.scores, aes(y=PC2, x=PC1, color=Holobiont, shape=Treatment), size=3, alpha=0.8)+
+  #facet_wrap(~Genus)+
+  geom_hline(yintercept = 0, linetype = 2, alpha = 0.8, color = "darkgray") + 
+  geom_vline(xintercept = 0, linetype = 2, alpha = 0.8, color = "darkgray") +
+  geom_segment(data=pca.species.scores, aes(y=0, x=0, yend=PC2, xend=PC1), arrow=arrow(length=unit(0.3, 'lines')),color='black', linetype='solid',alpha=0.9)+
+  geom_text(data=pca.species.scores, aes(y=PC2, x=PC1, label=Species), color="black")+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+   scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","C8 group"="#fddbc7","C8 groupH"="#fddbc7","Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  scale_x_continuous(limits=c(-2.5,2.5),paste(names(eig[1]), sprintf('(%0.1f%% explained var.)', 100 * eig[1]/sum(eig))))+
+  scale_y_continuous(limits=c(-1.5,1.5),paste(names(eig[2]), sprintf('(%0.1f%% explained var.)', 100 * eig[2]/sum(eig))))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_text(size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        panel.background= element_rect(fill=NA, color='black'),
+        legend.position ="none",
+        strip.text = element_text(size=12, face="italic"))
+gduring
+```
+
+###After
+
+```{r}
+mdsafter<-dplyr::filter(mds, Time== c("During/After"), Region ==c("Heron"))
+#row.has.na <- apply(mdsafter[,(7:15)], 1, function(x){any(is.na(x))})
+#mdsafter.filtered <- mdsafter[!row.has.na,]
+#mdsafter.filtered
+```
+
+```{r}
+colnames(mdsafter)
+#scale(mds[,(7:13)])
+```
+
+```{r}
+library(vegan)
+mdsafter.rda<- rda(mdsafter[,(8:14)], na.action= na.omit, scale=TRUE)
+```
+
+```{r}
+biplot(mdsafter.rda, scaling=1, main='Scaling')
+```
+
+```{r}
+pca.sites.scores<- as.data.frame(scores(mdsafter.rda, display='sites'))
+pca.sites.scores<- data.frame(pca.sites.scores, mdsafter)
+pca.species.scores<- as.data.frame(scores(mdsafter.rda, display='species'))
+pca.species.scores$Species<- rownames(pca.species.scores)
+pca.species.scores
+```
+```{r}
+eig<-eigenvals(mdsafter.rda)
+eig
+```
+
+```{r}
+#pca.sites.scores$Time <- factor(pca.sites.scores$Time, levels=c("after","after","After"))
+pca.sites.scores$Holobiont<- factor(pca.sites.scores$Holobiont, levels =c("Pver(OPI40)C. pacificum","Pver_PbairdiC. pacificum","PacutaC. pacificum","C8 group","C8 groupH","C78a","PdamC. latusorum","PdamC33a_sGBR"))
+gafter<-ggplot()+
+  geom_point(data=pca.sites.scores, aes(y=PC2, x=PC1, color=Holobiont, shape=Treatment), size=3, alpha=0.8)+
+  #facet_wrap(~Genus)+
+  geom_hline(yintercept = 0, linetype = 2, alpha = 0.8, color = "darkgray") + 
+  geom_vline(xintercept = 0, linetype = 2, alpha = 0.8, color = "darkgray") +
+  geom_segment(data=pca.species.scores, aes(y=0, x=0, yend=PC2, xend=PC1), arrow=arrow(length=unit(0.3, 'lines')),color='black', linetype='solid',alpha=0.9)+
+  geom_text(data=pca.species.scores, aes(y=PC2, x=PC1, label=Species), color="black")+
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+   scale_color_manual("Holobiont", values=c("Pver(OPI40)C. pacificum"="#67001f","Pver_PbairdiC. pacificum"="#b2182b","PacutaC. pacificum"="#d6604d","C8 group"="#fddbc7","C8 groupH"="darkgray","Stylophora_Heron"="#d1e5f0", "C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "PdamC. latusorum"="#2166ac","PdamC33a_sGBR"="#053061", "NA"='white'))+
+  scale_x_continuous(limits=c(-2.5,2.5),paste(names(eig[1]), sprintf('(%0.1f%% explained var.)', 100 * eig[1]/sum(eig))))+
+  scale_y_continuous(limits=c(-1.5,1.5),paste(names(eig[2]), sprintf('(%0.1f%% explained var.)', 100 * eig[2]/sum(eig))))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_text(size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position ="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12, face="italic"))
+gafter
+```
+
+```{r}
+library(cowplot)
+pcaillustrator<-cowplot::plot_grid(g,gduring,gafter,g,gduring,gafter,ncol=3, align="h", axis = "bt")
+pcaillustrator
+```
+
+```{r}
+eig<-eigenvals(mds.rda)
+eig
+```
+```{r}
+veg.hull= pca.sites.scores %>% group_by(Holobiont) %>%
+  do({
+    x=.
+    x[chull(x$PC1, x$PC2),]
+  })
+```
+
+```{r}
+gafter+ geom_polygon(data=veg.hull, aes(y=PC2, x=PC1,fill=Holobiont), alpha=0.2)+
+  scale_fill_brewer(palette = "RdYlBu")
+```
+
+#Benthic community composition
+```{r}
+bcc<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Benthic community corrected.csv", strip.white=T)
+bcc
+```
+```{r}
+colnames(bcc)
+```
+
+```{r}
+library(vegan)
+#benthic.mds<-  metaMDS(bcc[,(8:30)], k=2, autotransform = TRUE)
+#benthic.adonis<-adonis(bcc[,(8:30)] ~Region, data=bcc, permutations = 9999, na.rm=T)
+benthic.adonis
+```
+```{r}
+library(tidyr)
+bcc.long <- pivot_longer(bcc, cols=8:36, names_to = "Category", values_to = "Percent.Cover")
+bcc.long$Region<- as.factor(bcc.long$Region)
+bcc.long
+#bcc.long$Depth<-as.factor(bcc.long$Depth)
+```
+```{r}
+bccavg<-summarySE(bcc.long, measurevar="Percent.Cover", groupvars=c("Region","Category"), na.rm=TRUE)
+bccavg
+```
+```{r}
+unique(bcc.long$Category)
+```
+
+
+```{r}
+benthicall<- ggplot(bcc.long, (aes(y=Percent.Cover, x=Category, fill=Region)))+  
+  geom_boxplot(coef=1.5, outlier.shape = NA)+
+  #scale_color_manual("Season", values = c( "Spring" = "darkolivegreen3","Summer" = "salmon1", "Autumn"= "mediumaquamarine", "Winter" = "royalblue4"))+ #chaning the colors of the bars
+  scale_y_continuous(expression(Benthic~Cover~("%")),limits=c(0,100), breaks=c(0,20,40,60,80,100))+ #y axis label
+  #scale_x_discrete(expression(Coral-algal~interactions))+ #x axis label
+  facet_wrap(~Region)+
+  #geom_point(color="black")+
+  scale_x_discrete(expression(),limits=c("Hard.coral","Oth.inv","Algae","Substrate"))+ 
+  scale_fill_manual("Region", values=c("L"="#fddbc7","H"= "#92c5de"))+
+  theme_classic()+
+  #ggtitle("Harry's Bommie 8m")+
+  theme(axis.text.x=element_text(angle=90,hjust=1, size=10),
+        plot.title = element_text(margin = margin(t = 10, b = -20), hjust=0.9),
+        legend.justification=c(1,1),
+        legend.position=c(1,1), 
+        panel.background= element_rect(fill=NA, color='black'),
+        legend.background = element_rect(fill="white",
+                                  size=0.5, linetype="solid", 
+                                  colour ="black"),
+        axis.text.y = element_text(vjust=0.5, size=10), 
+        axis.title.x = element_text(vjust=0.5, size=10),
+        axis.title.y = element_text(vjust=0.5, size=12),
+        legend.title = element_text(size=12),
+        legend.title.align=0.5,
+        legend.text = element_text(vjust=0.5, size=10))
+benthicall
+```
+```{r}
+bcc.long$Region<- factor(bcc.long$Region, levels =c("L","H"))
+benthicoverall<- ggplot(bcc.long, (aes(y=Percent.Cover, x=Category, fill=Region)))+  
+  geom_boxplot(coef=1.5, outlier.shape = NA)+
+  #scale_color_manual("Season", values = c( "Spring" = "darkolivegreen3","Summer" = "salmon1", "Autumn"= "mediumaquamarine", "Winter" = "royalblue4"))+ #chaning the colors of the bars
+  scale_y_continuous(expression(Benthic~Cover~("%")),limits=c(0,100), breaks=c(0,20,40,60,80,100))+ #y axis label
+  #scale_x_discrete(expression(Coral-algal~interactions))+ #x axis label
+  facet_wrap(~Region)+
+  #geom_point(color="black")+
+  scale_x_discrete(expression(),limits=c("ACR_br","ACR_p_e","ACR_t_c_d","Pocilloporidae","Massive","POR.MASS","TFP_OTH","OTH.HC", "Oth.inv","Pad","CCA","Halimeda","Turf","Substrate"))+ 
+  scale_fill_manual("Region", values=c("L"="#fddbc7","H"= "#92c5de"))+
+  theme_classic()+
+  #ggtitle("Harry's Bommie 8m")+
+  theme(axis.text.x=element_text(angle=90,hjust=1, size=10),
+        plot.title = element_text(margin = margin(t = 10, b = -20), hjust=0.9),
+        legend.justification=c(1,1),
+        legend.position=c(1,1), 
+        panel.background= element_rect(fill=NA, color='black'),
+        legend.background = element_rect(fill="white",
+                                  size=0.5, linetype="solid", 
+                                  colour ="black"),
+        axis.text.y = element_text(vjust=0.5, size=10), 
+        axis.title.x = element_text(vjust=0.5, size=10),
+        axis.title.y = element_text(vjust=0.5, size=12),
+        legend.title = element_text(size=12),
+        legend.title.align=0.5,
+        legend.text = element_text(vjust=0.5, size=10))
+benthicoverall
+```
+
+```{r}
+benthic2<-cowplot::plot_grid(benthicall,benthicoverall,benthicall,benthicoverall,benthicall, benthicoverall, nrow=3, ncol=2,  align="h", axis = "bt")  
+benthic2
+```
+
+
+```{r}
+transect<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Transect data Lizard v Heron.csv", strip.white=T)
+transect$Species<-as.factor(transect$Species)
+#transect$Treatment<-as.factor(transect$Treatment)
+transect
+```
+
+```{r}
+unique(transect$Size..cm.)
+```
+
+```{r}
+transect<-transect%>%
+  mutate(Treatment= ifelse (Size..cm. %in% c("<10"), "Juvenile",
+                         ifelse(Size..cm. %in% c("31-40","41-50", ">50"), "Adult", NA)))
+
+head(transect)
+```
+```{r}
+abundancefig<-ggplot(transect, aes(y=Abundance.m2, x=Size..cm., fill = Region)) +
+  facet_wrap(~Species)+
+  geom_density(position = "stack")
+abundancefig
+```
+
+```{r}
+library(lme4)
+trans.glmer<- glmer(Abundance.m2~Region*Size..cm.*Species+(1|Site), data=transect,  na.action = na.exclude, family='poisson')
+r.squaredGLMM(trans.glmer)
+Anova(trans.glmer, type=3)
+transtukey<- emmeans(trans.glmer, list(pairwise ~ Region:Size..cm.:Species), adjust = "tukey", simple="Region")
+transtukey
+transtukey<- emmeans(trans.glmer, list(pairwise ~ Region:Species), adjust = "tukey", simple="Region")
+transtukey
+```
+
+```{r}
+transsum<-summarySE(transect, measurevar='Abundance.m2', groupvars=c('Region','Size..cm.','Species'), na.rm=TRUE, conf.interval = 0.95)
+transsum
+```
+
+###Figure
+```{r}
+transsum$Region<- factor(transsum$Region, levels =c("Lizard","Heron"))
+transsum$Size..cm.<- factor(transsum$Size..cm., levels =c("<10","11-20","21-30","31-40","41-50",">50"))
+abundance<-ggplot(transsum, aes(y=Abundance.m2, x=Size..cm.,color=Region,fill=Region,group=interaction(Species,Region,Size..cm.)))+ 
+  #geom_jitter(data=transect, aes(y=Abundance.m2,x=Size..cm., color=Region),alpha=0.2,position=position_jitterdodge())+
+  geom_bar(stat="identity",position=position_dodge(0.9), alpha=0.8)+
+  geom_errorbar(aes(ymin=Abundance.m2-se, ymax=Abundance.m2+se), width= 0.2, position=position_dodge(0.9)) +
+  facet_wrap(~Species)+
+  #geom_point(position=position_dodge(0.9),size=3)+ 
+  #geom_jitter(data=transect, aes(y=Abundance.m2, x=Species),position=position_jitterdodge(), alpha=0.4)+
+  scale_y_continuous(expression(Abundance~(individuals~'\U2219'~m^{-2})), breaks=c(0,0.25,0.50,0.75))+
+  scale_x_discrete(expression(Size~(cm)))+
+  #scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19), "NA"=(pch=4)))+
+ scale_color_manual("Region", values=c("Lizard"= 'black',"Heron"= "black"))+
+ scale_fill_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_text(vjust=0.5, size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position=c(0.9,0.85),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(vjust=0.5, size=12, face='italic'))
+abundance
+```
+
+```{r}
+library(cowplot)
+abundance2<-plot_grid(abundance,abundance, nrow=2, ncol=2,  align="h", axis = "bt")  
+abundance2
+```
+
+```{r}
+k<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Lizard March 2020 bleaching transects.csv", strip.white=T)
+k
+```
+
+```{r}
+kpoc<-filter(k, Species == c("Pocillopora"))
+kpoc
+```
+```{r}
+ksty<-filter(k, Species == c("Stylophora"))
+ksty
+```
+
+```{r}
+lm_eqn <- function(df){
+    m <- lm(Color ~ Size..cm., ksty);
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(unname(coef(m)[1]), digits = 2),
+              b = format(unname(coef(m)[2]), digits = 2),
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+}
+```
+
+```{r}
+library(colorspace)
+kfig<-ggplot(k, aes(y=Color, x=Size..cm., color=Color))+ 
+  geom_point(alpha=0.4)+
+  geom_smooth(method="lm", color="black")+
+  scale_y_continuous(expression(Bleaching~prevalence), limits=c(0,8))+
+  scale_x_continuous(expression(Size~(cm)))+
+  facet_grid(~Species)+
+  #geom_text(x = 20, y = 8, label = lm_eqn(df), parse = TRUE)+
+   scale_color_continuous_sequential(palette = "Red-Yellow")+
+  #scale_fill_manual("Bleach", values=c("Bleach"= '#DFD3B9',"Non-bleach"='#796334'))+ #Manually choose the colors
+  #scale_color_manual("Species", values=c("Pocillopora"= "indianred","Stylophora"= "yellow4"))+ #Manually choose the colors
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_text(size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position=c(0.92,0.75),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12, face="italic"))
+kfig ##this follows the patterns seen in Hawkins et al 2016
+```
+```{r}
+h<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/Heron August 2020 colony transects.csv", strip.white=T)
+h
+```
+
+```{r}
+hpoc<-filter(h, Species == c("Pocillopora"))
+hpoc
+```
+```{r}
+hsty<-filter(h, Species == c("Stylophora"))
+hsty
+```
+
+```{r}
+lm_eqn <- function(df){
+    m <- lm(Colony.mortality ~ Size..cm., hsty);
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(unname(coef(m)[1]), digits = 2),
+              b = format(unname(coef(m)[2]), digits = 2),
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+}
+```
+
+
+```{r}
+library(colorspace)
+hfig<-ggplot(h, aes(y=Score, x=Size..cm., color=Score))+ 
+  geom_point(alpha=0.4)+
+  geom_smooth(method="lm", color="black")+
+  scale_y_continuous(expression(Bleaching~prevalence), limits=c(0,6))+
+  scale_x_continuous(expression(Size~(cm)))+
+  facet_grid(~Species, scale="free")+
+  #geom_text(x = 20, y = 5, label = lm_eqn(df), parse = TRUE)+
+  scale_color_continuous_sequential(palette = "Magenta")+
+  #scale_fill_manual("Bleach", values=c("Bleach"= '#DFD3B9',"Non-bleach"='#796334'))+ #Manually choose the colors
+  #scale_color_manual("Species", values=c("Pocillopora"= "indianred","Stylophora"= "yellow4"))+ #Manually choose the colors
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_text(size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position=c(0.92,0.75),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12, face="italic"))
+hfig ##this follows the patterns seen in Hawkins et al 2016
+```
+
+```{r}
+library(colorspace)
+hfig2<-ggplot(h, aes(y=Colony.mortality, x=Size..cm.))+ 
+  geom_point(alpha=0.4)+
+  geom_smooth(method="lm", color="black")+
+  scale_y_continuous(expression(Partial~mortality~("%")))+
+  scale_x_continuous(expression(Size~(cm)))+
+  facet_grid(~Species, scales='free')+
+  #geom_text(x = 20, y = 8, label = lm_eqn(df), parse = TRUE)+
+  scale_color_continuous_sequential(palette = "Magenta")+
+  #scale_fill_manual("Bleach", values=c("Bleach"= '#DFD3B9',"Non-bleach"='#796334'))+ #Manually choose the colors
+  #scale_color_manual("Species", values=c("Pocillopora"= "indianred","Stylophora"= "yellow4"))+ #Manually choose the colors
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_text(size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position=c(0.92,0.75),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12, face="italic"))
+hfig2 ##this follows the patterns seen in Hawkins et al 2016
+```
+
+```{r}
+library(cowplot)
+bleachingreefheron<-plot_grid(hfig,hfig2,hfig2,nrow=2, ncol=2,  align="h", axis = "bt")  
+bleachingreefheron
+```
+
+```{r}
+library(cowplot)
+bleachingreef<-plot_grid(kfig,kfig, nrow=2, ncol=2,  align="h", axis = "bt")  
+bleachingreef
+```
+
+#PAR - Lizard v. Heron
+```{r}
+PAR<-read.csv("/Users/imkri/Desktop/Postdoc/Species interactions project/PAR Lizard and Heron matching dates_corrected.csv", strip.white=T)
+PAR$Site<-as.factor(PAR$Site)
+PAR$Region<-as.factor(PAR$Region)
+PAR$Date<- as.Date(PAR$Date, format = "%Y-%m-%d")
+PAR$Date_Time2<- as.POSIXct(paste(PAR$Date, PAR$Time), "%Y-%m-%d hh:mm:ss")
+#transect$Treatment<-as.factor(transect$Treatment)
+PAR
+```
+
+```{r}
+PARmean<-summarySE(PAR, measurevar="PAR", groupvars=c("Region", "Date"), na.rm=TRUE)
+PARmean
+```
+
+
+```{r}
+#PAR$Where <- factor(PAR$Where, levels=c("Satellite","In situ"))
+PAR$Date<- as.Date(as.POSIXct(PAR$Date, origin="1970-01-01"))
+PARfig<-ggplot(PARmean, aes(y=PAR, x=Date, color=Region, fill=Region))+
+  #geom_point()+
+  #geom_area(aes(fill=Region, x=Date), alpha=0.4) +
+  #geom_smooth()+
+  geom_line(size=1, alpha=0.8)+
+  geom_ribbon(aes(ymin=PAR-se, ymax=PAR+se), alpha=0.4)+
+   scale_color_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+   scale_fill_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+  #scale_color_manual("Where", values=c("In situ"="brown4","Satellite"= "coral2"))+
+  #geom_hline(yintercept = 28.7, linetype="solid", color = 'black', size=0.7, show.legend = TRUE)+
+  #geom_hline(yintercept = 29.7, linetype="dashed", color = 'black', size=0.7, show.legend = TRUE)+
+  scale_x_date(date_breaks = "1 month", date_labels = "%b %Y", expand=c(0.015,0.015))+
+  #scale_y_continuous(expression(PARerature~(degree~C)), breaks=c(24.5,26,27.5,29,30.5), limits=c(24,31))+
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5,size=12),
+        plot.title = element_text(margin = margin(t = 10, b = 10), hjust=0.5),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.background = element_blank(), 
+        strip.text = element_blank(),
+        legend.title = element_text(vjust=0.5, size=12), 
+        legend.position=c(0.85,0.85),
+        axis.text.y = element_text(vjust=0.5, size=12),  
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size=12))
+PARfig
+```
+
+```{r}
+library(cowplot)
+PAR2<-plot_grid(PARfig,PARfig, nrow=2, ncol=2,  align="h", axis = "bt")  
+PAR2
+```
+
+```{r}
+subset(PARmean, Date> "2019-11-27" & Date < "2020-02-09")
+PARmean2<-summarySE(PARmean, measurevar="PAR", groupvars=c("Region"), na.rm=TRUE)
+PARmean2
+```
+
+```{r}
+PAR.lm<- lm(PAR~Region, data=PARmean) #Gaussian
+Anova(PAR.lm)
+tukey<- emmeans(PAR.lm, list(pairwise ~ Region), adjust = "tukey")
+tukey
+```
+
