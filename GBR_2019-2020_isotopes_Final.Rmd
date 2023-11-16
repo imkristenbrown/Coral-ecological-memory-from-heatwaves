@@ -1,0 +1,2571 @@
+---
+title: "GBR_2019-2020_isotopes_Final"
+author: "Veronica Radice"
+date: "10/29/2023"
+output: html_document
+---
+
+
+Heron island and Lizard island 
+- Before bleaching (November-December 2019) 
+- During bleaching (March 2020, Lizard only)
+- After bleaching (August 2020, Heron only)
+
+No symbiont data from 2020 (insufficient material).
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(plyr)
+library(nlme) # for lme()
+library(emmeans)
+library(predictmeans) # residplot
+library(effects)
+library(Rmisc)
+#library(multcompView)
+library(Cairo)
+library(RColorBrewer)
+library(car) #Anova()
+```
+
+```{r}
+#display.brewer.pal(8, "RdBu")
+brewer.pal(8, "RdBu")
+```
+
+```{r}
+setwd("~/Documents/Rprojects/postdoc\ Rprojects/UQ_postdoc_Rprojects/")
+```
+
+
+### All isotope data, with plankton
+
+Already merged with genetic ID data
+```{r}
+data.w.plank <- read.csv("~/Documents/Rprojects/postdoc\ Rprojects/UQ_postdoc_Rprojects/GBR_2019-2020_isotope_Compiled_MASTER_meta_w-plankton_2022-08_Holobiont_copied-plankton-fraction_b_Final.csv", header = TRUE)
+
+data.w.plank[sapply(data.w.plank, is.character)] <- lapply(data.w.plank[sapply(data.w.plank, is.character)], as.factor)
+
+data.w.plank$Time <- factor(data.w.plank$Time, levels = c("Before", "During", "After"))
+
+data.w.plank$Time2 <- factor(data.w.plank$Time2, levels = c("Before", "During/After"))
+
+data.w.plank$Fraction <- factor(data.w.plank$Fraction, levels = c("Host", "Symbiont", "Plankton", "POM"))
+
+data.w.plank$Site <- factor(data.w.plank$Site, levels = c("Coral Canyons", "Harry's Bommie", "Pam's Point", "Big Vicki's", "Granite Bluff", "Turtle South"))
+
+#data.w.plank$Fraction.detail <- revalue(data.w.plank$Fraction.detail, c("Tubastraea" = "Non-symbiotic Coral")) 
+
+dim(data.w.plank)
+```
+
+### keep 3 main size fractions of plankton
+
+Already filtered out
+```{r}
+# normal daytime plankton samples
+# remove n=2 samples from night dive
+#data.w.plank <- subset(data.w.plank, Plank.Day.Night != "Night")
+
+# remove n=1 sample of >400 um size fraction
+#data.w.plank <- subset(data.w.plank, Fraction != ">400")
+#data.w.plank <- subset(data.w.plank, Fraction.detail != "Plankton, >400 um")
+#data.w.plank <- droplevels(data.w.plank)
+
+#levels(data.w.plank$Fraction.detail_b)
+# ">300"    "153-300" "65-153" 
+
+#data.w.plank$Fraction <- factor(data.w.plank$Fraction, levels = c("65-153", "153-300", ">300"))
+
+#dim(data.w.plank)
+```
+
+```{r}
+data.w.plank$Holobiont_ID <- factor(data.w.plank$Holobiont_ID, levels =c("Pver(OPI40), C. pacificum","Pver_Pbairdi, C. pacificum","Pacuta, C. pacificum","S. pistillata, C8 group","S. pistillata, C8 groupH","S. pistillata, C78a","Pdam, C. latusorum","Pdam, C33a_sGBR", "S. pistillata, C35a group", "S. pistillata, ")) #"Tubastraea coccinea"
+```
+
+```{r}
+levels(data.w.plank$Holobiont_ID)
+```
+
+8 Isotope/Physiol samples are missing genetic ID (holobiont ID)
+```{r}
+data.w.plank %>%
+  filter(is.na(Holobiont_ID) & Time2 == "During/After" & Fraction != "Plankton" & Fraction != "POM" & Lab_ID != "") %>% 
+    group_by(Region, Genus, Holobiont_ID, Time, Fraction, Treatment) %>% 
+      dplyr::summarise(count = n(), d13C_mean = mean(d13C, na.rm = TRUE), sd_d13C = sd(d13C, na.rm = TRUE), d15N_mean = mean(d15N, na.rm = TRUE), sd_d15N = sd(d15N, na.rm = TRUE), Protein_cm2 = mean(Protein_cm2, na.rm = TRUE), sd_Protein_cm2 = sd(Protein_cm2, na.rm = TRUE))
+```
+
+
+### Survival data with Big delta 13C and 15N
+```{r}
+survival.data <- read.csv("~/Documents/Rprojects/postdoc\ Rprojects/UQ_postdoc_Rprojects/GBR_2020_survival_Big-delta-13C-15N.csv", header = TRUE)
+
+survival.data[sapply(survival.data, is.character)] <- lapply(survival.data[sapply(survival.data, is.character)], as.factor)
+
+dim(survival.data)
+```
+
+
+```{r}
+data.w.plank.survival <- subset(data.w.plank, Time == "Before")
+
+data.w.plank.survival <- data.w.plank %>% 
+  inner_join(survival.data, by = c("Sample_ID")) #, "Time"
+
+dim(data.w.plank.survival)
+```
+
+Symbiont 
+```{r}
+data.w.plank.survival %>%
+  filter(Survival_category != "" & Fraction == "Symbiont" & Time == "Before") %>%
+  group_by(Survival_category) %>% 
+  dplyr::summarise(count = n(), d13C_mean = mean(d13C, na.rm = TRUE), sd_d13C = sd(d13C, na.rm = TRUE), d15N_mean = mean(d15N, na.rm = TRUE), sd_d15N = sd(d15N, na.rm = TRUE), C.percent = mean(C_percent.weight.num, na.rm = TRUE), sd_C.percent = sd(C_percent.weight.num, na.rm = TRUE), N.percent = mean(N_percent.weight.num, na.rm = TRUE), sd_N.percent = sd(N_percent.weight.num, na.rm = TRUE), CN = mean(CN_molar, na.rm = TRUE), sd_CN = sd(CN_molar, na.rm = TRUE), Protein_cm2 = mean(Protein_cm2, na.rm = TRUE), sd_Protein_cm2 = sd(Protein_cm2, na.rm = TRUE))
+```
+
+
+```{r}
+sym.data.w.plank.survival <- subset(data.w.plank.survival, Survival_category != "" & Fraction == "Symbiont" & Time == "Before" & Sample_ID != "HA056") #
+#sym.data.w.plank.survival <- droplevels(sym.data.w.plank.survival)
+
+sym.summary <- summarySE(sym.data.w.plank.survival, measurevar='d13C', groupvars=c("Survival_category", "Treatment.x", "Genus"), na.rm=TRUE, conf.interval = 0.95)
+sym.summary
+
+plot <- ggplot(data = subset(sym.summary,!is.na(Genus)), aes(y=d13C, x=Survival_category, color=Genus, shape=Treatment.x)) +
+  #filter(Survival_category != "" & Fraction == "Symbiont" & Time == "Before") %>% 
+  #ggplot(aes(x=Survival_category, y=d13C, fill = Holobiont_ID)) + # x=Treatment
+    facet_wrap(~Genus) + 
+    #geom_boxplot(outlier.shape=NA, alpha=0.8) +
+    #geom_jitter(position=position_jitterdodge(), alpha=0.4) +
+   # geom_jitter(data = subset(data.w.plank.survival,!is.na(Holobiont_ID)), aes(y=d13C,x=Survival_category, color=Holobiont_ID, shape=Treatment.x), alpha=0.8, position=position_dodge(0.5)) +
+  geom_jitter(data = subset(sym.data.w.plank.survival,!is.na(Symbiont_speciesID)), aes(y=d13C,x=Survival_category, color=Holobiont_ID, shape=Treatment.x), alpha=0.8, position=position_dodge(0.5)) + 
+  geom_point(size=3, position=position_dodge(0.3),stat="identity") +
+  geom_errorbar(aes(ymin=d13C-se, ymax=d13C+se, width= 0.3),  position=position_dodge(0.3),stat="identity") + 
+    scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4)))+
+  #geom_point(size=3, position=position_dodge(0.3),stat="identity") +
+    #geom_hline(yintercept = 0, color = "black", linetype = 2) +
+    #stat_summary(fun = mean, geom="point", shape=17, size=2, color="black", fill="black") +
+    ylab(expression("Symbiont  " * {delta}^13*C ~'(\u2030)')) +
+    scale_y_continuous(breaks = c(-21, -20, -19, -18, -17, -16, -15, -14)) +
+   scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "S. pistillata, C35a group"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061", "NA"='white')) + #FINAL COLOR SCHEME ##d9d9d9
+   #theme(axis.text.x=element_text(vjust=0.5, size=12, face="italic"), panel.background = element_rect(fill = "white", colour = "grey50"), legend.position = "none", axis.title.x = element_blank())
+  scale_x_discrete(labels = scales::label_wrap(10)) +
+  theme(axis.text.x=element_text(vjust=0.5, size=9, face="italic"), panel.background = element_rect(fill = "white", colour = "black"), legend.position = "none", axis.title.x=element_blank()) 
+  
+  #theme_classic()+
+  # theme(axis.text.x=element_text(vjust=0.5, size=12),
+  #       axis.text.y=element_text(vjust=0.5, size=12),
+  #       axis.title.x=element_blank(),
+  #       axis.title.y=element_text(size=12),
+  #       legend.text = element_text(vjust=0.5, size=12),
+  #       #legend.position=c(0.89,0.89),
+  #       panel.background= element_rect(fill=NA, color='black'),
+  #       strip.text = element_text(size=12,face="italic"))
+
+plot
+
+#ggsave("GBR_2020_Survival_Before_Symbiont_d13C_Genus_Final.pdf", plot = plot, device = cairo_pdf, width = 5, height = 4, units = "in", dpi = 1200)
+```
+
+```{r}
+sym.data.w.plank.survival <- subset(data.w.plank.survival, Survival_category != "" & Fraction == "Symbiont" & Time == "Before" & Sample_ID != "HA056") #
+#sym.data.w.plank.survival <- droplevels(sym.data.w.plank.survival)
+
+sym.summary <- summarySE(sym.data.w.plank.survival, measurevar='d13C', groupvars=c("Survival_category", "Treatment.x"), na.rm=TRUE, conf.interval = 0.95)
+sym.summary
+
+plot <- ggplot(data = sym.summary, aes(y=d13C, x=Survival_category, shape=Treatment.x)) +
+  #filter(Survival_category != "" & Fraction == "Symbiont" & Time == "Before") %>% 
+  #ggplot(aes(x=Survival_category, y=d13C, fill = Holobiont_ID)) + # x=Treatment
+    #facet_wrap(~Genus) + 
+    #geom_boxplot(outlier.shape=NA, alpha=0.8) +
+    #geom_jitter(position=position_jitterdodge(), alpha=0.4) +
+   # geom_jitter(data = subset(data.w.plank.survival,!is.na(Holobiont_ID)), aes(y=d13C,x=Survival_category, color=Holobiont_ID, shape=Treatment.x), alpha=0.8, position=position_dodge(0.5)) +
+  geom_jitter(data = subset(sym.data.w.plank.survival,!is.na(Symbiont_speciesID)), aes(y=d13C,x=Survival_category, color=Holobiont_ID, shape=Treatment.x), alpha=0.8, position=position_dodge(0.5)) + 
+  geom_point(size=3, position=position_dodge(0.3),stat="identity") +
+  geom_errorbar(aes(ymin=d13C-se, ymax=d13C+se, width= 0.3),  position=position_dodge(0.3),stat="identity") + 
+    scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4)))+
+  #geom_point(size=3, position=position_dodge(0.3),stat="identity") +
+    #geom_hline(yintercept = 0, color = "black", linetype = 2) +
+    #stat_summary(fun = mean, geom="point", shape=17, size=2, color="black", fill="black") +
+    ylab(expression("Symbiont  " * {delta}^13*C ~'(\u2030)')) +
+    scale_y_continuous(breaks = c(-21, -20, -19, -18, -17, -16, -15, -14)) +
+   scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "S. pistillata, C35a group"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061", "NA"='white')) + #FINAL COLOR SCHEME ##d9d9d9
+   #theme(axis.text.x=element_text(vjust=0.5, size=12, face="italic"), panel.background = element_rect(fill = "white", colour = "grey50"), legend.position = "none", axis.title.x = element_blank())
+  scale_x_discrete(labels = scales::label_wrap(10)) +
+  theme(axis.text.x=element_text(vjust=0.5, size=9, face="italic"), panel.background = element_rect(fill = "white", colour = "black"), legend.position = "none", axis.title.x=element_blank()) 
+  
+  #theme_classic()+
+  # theme(axis.text.x=element_text(vjust=0.5, size=12),
+  #       axis.text.y=element_text(vjust=0.5, size=12),
+  #       axis.title.x=element_blank(),
+  #       axis.title.y=element_text(size=12),
+  #       legend.text = element_text(vjust=0.5, size=12),
+  #       #legend.position=c(0.89,0.89),
+  #       panel.background= element_rect(fill=NA, color='black'),
+  #       strip.text = element_text(size=12,face="italic"))
+
+plot
+
+#ggsave("GBR_2020_Survival_Before_Symbiont_d13C.pdf", plot = plot, device = cairo_pdf, width = 5, height = 4, units = "in", dpi = 1200)
+```
+
+
+```{r}
+sym.data.w.plank.survival <- subset(data.w.plank.survival, Survival_category != "" & Fraction == "Symbiont" & Time == "Before" & Sample_ID != "HA056") #
+#sym.data.w.plank.survival <- droplevels(sym.data.w.plank.survival)
+
+sym.summary <- summarySE(sym.data.w.plank.survival, measurevar='C_percent.weight.num', groupvars=c("Survival_category", "Treatment.x", "Genus"), na.rm=TRUE, conf.interval = 0.95)
+sym.summary
+
+plot <- ggplot(data = subset(sym.summary,!is.na(Genus)), aes(y=C_percent.weight.num, x=Survival_category, color=Genus, shape=Treatment.x)) +
+    facet_wrap(~Genus) + 
+  geom_jitter(data = subset(sym.data.w.plank.survival,!is.na(Symbiont_speciesID)), aes(y=C_percent.weight.num,x=Survival_category, color=Holobiont_ID, shape=Treatment.x), alpha=0.8, position=position_dodge(0.5)) + 
+  geom_point(size=3, position=position_dodge(0.3),stat="identity") +
+  geom_errorbar(aes(ymin=C_percent.weight.num-se, ymax=C_percent.weight.num+se, width= 0.3),  position=position_dodge(0.3),stat="identity") + 
+    scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4)))+
+  #geom_point(size=3, position=position_dodge(0.3),stat="identity") +
+    #geom_hline(yintercept = 0, color = "black", linetype = 2) +
+    #stat_summary(fun = mean, geom="point", shape=17, size=2, color="black", fill="black") +
+    ylab("Symbiont % Carbon") +
+    scale_y_continuous(limits = c(0,90), breaks = c(20, 40, 60, 80)) +
+   scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "S. pistillata, C35a group"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061", "NA"='white')) + #FINAL COLOR SCHEME ##d9d9d9
+   #theme(axis.text.x=element_text(vjust=0.5, size=12, face="italic"), panel.background = element_rect(fill = "white", colour = "grey50"), legend.position = "none", axis.title.x = element_blank())
+  scale_x_discrete(labels = scales::label_wrap(10)) +
+  theme(axis.text.x=element_text(vjust=0.5, size=9, face="italic"), panel.background = element_rect(fill = "white", colour = "black"), legend.position = "none", axis.title.x=element_blank()) 
+  
+plot
+
+#ggsave("GBR_2020_Survival_Before_Symbiont_percent-C_Genus_Final.pdf", plot = plot, device = cairo_pdf, width = 5, height = 4, units = "in", dpi = 1200)
+```
+
+
+## Summary table - all
+```{r}
+summary <- data.w.plank %>%
+  filter(C_percent.weight != "NA") %>% 
+    group_by(Region, Fraction, Genus, Treatment, Time, Fraction_Plank) %>% 
+      dplyr::summarise(count = n(), d13C_mean = mean(d13C, na.rm = TRUE), sd_d13C = sd(d13C, na.rm = TRUE), d15N_mean = mean(d15N, na.rm = TRUE), sd_d15N = sd(d15N, na.rm = TRUE), C.percent = mean(C_percent.weight.num, na.rm = TRUE), sd_C.percent = sd(C_percent.weight.num, na.rm = TRUE), N.percent = mean(N_percent.weight.num, na.rm = TRUE), sd_N.percent = sd(N_percent.weight.num, na.rm = TRUE), CN = mean(CN_molar, na.rm = TRUE), sd_CN = sd(CN_molar, na.rm = TRUE), Big.delta.15N = mean(Big.delta.15N, na.rm = TRUE), sd_Big.delta.15N = sd(Big.delta.15N, na.rm = TRUE), Big.delta.13C = mean(Big.delta.13C, na.rm = TRUE), sd_Big.delta.13C = sd(Big.delta.13C, na.rm = TRUE))
+
+summary
+
+#write.csv(file = "Summary_GBR_All-isotope-data_Genus_all-data_2023-10-29_Final.csv", x = summary)
+```
+
+
+## Summary table - Holobiont_ID
+```{r}
+summary <- data.w.plank %>%
+  filter(Fraction != "Plankton" & Fraction != "POM" & Genus != "Tubastraea") %>% #C_percent.weight != "NA" & 
+    group_by(Region, Fraction, Genus, Holobiont_ID, Treatment, Time) %>% 
+      dplyr::summarise(count = n(), d13C_mean = mean(d13C, na.rm = TRUE), sd_d13C = sd(d13C, na.rm = TRUE), d15N_mean = mean(d15N, na.rm = TRUE), sd_d15N = sd(d15N, na.rm = TRUE), C.percent = mean(C_percent.weight.num, na.rm = TRUE), sd_C.percent = sd(C_percent.weight.num, na.rm = TRUE), N.percent = mean(N_percent.weight.num, na.rm = TRUE), sd_N.percent = sd(N_percent.weight.num, na.rm = TRUE), CN = mean(CN_molar, na.rm = TRUE), sd_CN = sd(CN_molar, na.rm = TRUE), Big.delta.15N = mean(Big.delta.15N, na.rm = TRUE), sd_Big.delta.15N = sd(Big.delta.15N, na.rm = TRUE), Big.delta.13C = mean(Big.delta.13C, na.rm = TRUE), sd_Big.delta.13C = sd(Big.delta.13C, na.rm = TRUE))
+
+summary
+
+#write.csv(file = "Summary_GBR_All-isotope-data_Holobiont_2023-10-29_Final.csv", x = summary)
+```
+
+
+# ellipse plot - Before data only
+```{r}
+#data.w.plank$Fraction.detail <- factor(data.w.plank$Fraction.detail, levels = c("Host", "Symbiont", "Non-symbiotic Coral", "Plankton, 65-153 um", "Plankton, 153-300 um", "Plankton, >300 um"))
+
+plot <- data.w.plank %>% 
+  filter(Time == "Before" & Genus != "" & Genus != "Tubastraea" & Fraction == "Host") %>% 
+  ggplot(aes(d13C, d15N, color = Region, shape=Treatment)) +  
+  facet_wrap(~Genus, dir = "h") +
+  geom_point(alpha = 0.8, na.rm = TRUE, size = 1) +
+  stat_ellipse(aes(linetype=Treatment), level = .4, size = .7) + 
+  #scale_linetype_manual(name = "Resources", values = c(4,4), guide = "legend") + #aesthetics = "hline_colour", guide = "legend"
+  scale_linetype_manual(values = c(1,2)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+   scale_fill_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+  xlab(expression({delta}^13*C~('\u2030'))) +
+  ylab(expression({delta}^15*N~('\u2030'))) +
+  #scale_x_continuous(limits = c(-20,-14), breaks = c(-20, -19, -18, -17, -16, -15, -14)) + #c(-22, -20, -18, -16, -14) #c(-21, -19, -17, -15, -13) #c(-21, -20, -19, -18, -17, -16, -15, -14)
+  #scale_y_continuous(limits = c(2.9,6), breaks = c(3, 3.5, 4, 4.5, 5, 5.5, 6)) +
+  #coord_fixed() +
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12), axis.text.y=element_text(vjust=0.5, size=12), panel.background = element_rect(fill = "white", colour = "grey50"), strip.background = element_blank()) #legend.position="none", strip.text = element_blank()
+
+plot
+
+#ggsave("GBR_2019_ellipses_Before_Host_Genus_Region-comparison.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+
+#ggsave("GBR_2019_ellipses_Before_Host_Genus_Region-comparison_wo-legend.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+
+# ellipse plot - During/After data only
+```{r}
+#data.w.plank$Fraction.detail <- factor(data.w.plank$Fraction.detail, levels = c("Host", "Symbiont", "Non-symbiotic Coral", "Plankton, 65-153 um", "Plankton, 153-300 um", "Plankton, >300 um"))
+
+plot <- data.w.plank %>% 
+  filter(Time != "Before" & Genus != "" & Genus != "Tubastraea" & Fraction == "Host") %>% 
+  ggplot(aes(d13C, d15N, color = Region, pch = Treatment)) +  
+  facet_wrap(~Genus, dir = "h") +
+  geom_point(alpha = 0.7, na.rm = TRUE, size = 1) +
+  stat_ellipse(aes(linetype=Treatment), level = .4, size = .7) + 
+  #scale_linetype_manual(name = "Resources", values = c(4,4), guide = "legend") + #aesthetics = "hline_colour", guide = "legend"
+  scale_linetype_manual(values = c(1,2)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+   scale_fill_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+  xlab(expression({delta}^13*C~('\u2030'))) +
+  ylab(expression({delta}^15*N~('\u2030'))) +
+  scale_x_continuous(limits = c(-20,-14), breaks = c(-20, -19, -18, -17, -16, -15, -14)) + #c(-22, -20, -18, -16, -14) #c(-21, -19, -17, -15, -13) #c(-21, -20, -19, -18, -17, -16, -15, -14)
+  scale_y_continuous(limits = c(2.9,6), breaks = c(3, 3.5, 4, 4.5, 5, 5.5, 6)) +
+  #coord_fixed() +
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12), axis.text.y=element_text(vjust=0.5, size=12), panel.background = element_rect(fill = "white", colour = "grey50"), strip.background = element_blank()) #legend.position="none", strip.text = element_blank()
+
+plot
+
+#ggsave("GBR_2020_ellipses_After-During_Host_Genus_Region-comparison.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+
+```{r}
+host <- subset(data.w.plank, Fraction == "Host")
+host[sapply(host, is.character)] <- lapply(host[sapply(host, is.character)], as.factor)
+
+# without Tubastraea
+host <- subset(host, Genus != "Tubastraea")
+
+host <- subset(host, !is.na(C_percent.weight))
+
+host <- droplevels(host)
+
+dim(host)
+```
+
+```{r}
+host %>%
+  group_by(Region, Genus, Treatment, Time) %>% 
+  dplyr::summarise(count = n(), d13C_mean = mean(d13C, na.rm = TRUE), sd_d13C = sd(d13C, na.rm = TRUE), d15N_mean = mean(d15N, na.rm = TRUE), sd_d15N = sd(d15N, na.rm = TRUE), C.percent = mean(C_percent.weight.num, na.rm = TRUE), sd_C.percent = sd(C_percent.weight.num, na.rm = TRUE), N.percent = mean(N_percent.weight.num, na.rm = TRUE), sd_N.percent = sd(N_percent.weight.num, na.rm = TRUE), CN = mean(CN_molar, na.rm = TRUE), sd_CN = sd(CN_molar, na.rm = TRUE), Protein_cm2 = mean(Protein_cm2, na.rm = TRUE), sd_Protein_cm2 = sd(Protein_cm2, na.rm = TRUE))
+```
+
+Counts by Holobiont_ID
+```{r}
+data.w.plank %>%
+  filter(Fraction == "Host") %>% 
+  group_by(Region, Holobiont_ID, Time, Treatment) %>% 
+  dplyr::summarise(count = n())
+```
+
+```{r}
+host %>%
+  group_by(Holobiont_ID, Time) %>% 
+  dplyr::summarise(count = n())
+```
+
+Remove genotypes with low samples sizes
+```{r}
+# only n=1 "S. pistillata, " (no symbiont ID assigned) 
+host.holo.select <- subset(host, Holobiont_ID != "S. pistillata, " | is.na(Holobiont_ID))
+
+# only handful n=4 of Before only (Heron) samples
+#host.holo.select <- subset(host.holo.select, Holobiont_ID != "S. pistillata, C35a group" | is.na(Holobiont_ID))
+
+# only handful n=4 "Pdam, C. latusorum" Heron only samples (1 Before, 3 After)
+
+host.holo.select <- droplevels(host.holo.select)
+
+levels(host.holo.select$Holobiont_ID)
+
+dim(host.holo.select)
+```
+
+```{r}
+plank <- subset(data.w.plank, Fraction == "Plankton")
+plank <- droplevels(plank)
+dim(plank)
+```
+
+
+########################################################################
+
+# Host d15N
+```{r}
+par(mfrow=c(1,4))
+plot(d15N ~ Region * Genus * Treatment + Time, data = host)
+```
+
+```{r}
+hist(host$d15N)
+```
+
+```{r}
+qqnorm(host$d15N, ylab="Sample Quantiles")
+qqline(host$d15N, col="red")
+```
+
+# Host d15N - LME
+```{r}
+host.d15N.lme <- lme(d15N ~ Region * Genus * Treatment * Time2, random = ~1|Site, data = host, na.action = na.exclude)
+```
+
+
+```{r}
+summary(host.d15N.lme)
+```
+
+```{r}
+Anova(host.d15N.lme, type = 3)
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.d15N.lme, pairwise ~ Region * Genus, adjust = "tukey")
+```
+
+```{r}
+host %>%
+  group_by(Region, Genus) %>% 
+  dplyr::summarise(count = n(), d15N_mean = mean(d15N, na.rm = TRUE), sd_d15N = sd(d15N, na.rm = TRUE))
+```
+
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.d15N.lme, pairwise ~ Region * Time2, adjust = "tukey")
+```
+
+```{r}
+host %>%
+  group_by(Region, Time2) %>% 
+  dplyr::summarise(count = n(), d15N_mean = mean(d15N, na.rm = TRUE), sd_d15N = sd(d15N, na.rm = TRUE))
+```
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(host.d15N.lme)
+#plot(ranef(host.d15N.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(host.d15N.lme, level=2)
+plot(host.d15N.lme)
+hist(residuals(host.d15N.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(host.d15N.lme, ~ranef(., level=1))
+```
+
+```{r}
+plot(allEffects(host.d15N.lme), ylab="Host d15N")
+```
+
+
+########################################################################
+
+# Host d13C
+
+```{r}
+par(mfrow=c(1,4))
+plot(d13C ~ Region * Genus * Treatment + Time, data = host)
+```
+
+```{r}
+hist(host$d13C)
+```
+
+```{r}
+qqnorm(host$d13C, ylab="Sample Quantiles")
+qqline(host$d13C, col="red")
+```
+
+# Host d13C - LME
+```{r}
+host.d13C.lme <- lme(d13C ~ Region * Genus * Treatment * Time2, random = ~1|Site, data = host, na.action = na.exclude)
+```
+
+
+```{r}
+summary(host.d13C.lme)
+```
+
+```{r}
+Anova(host.d13C.lme, type = 3)
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.d13C.lme, pairwise ~ Region * Genus * Time2, adjust = "tukey")
+```
+
+```{r}
+host %>%
+  group_by(Region, Genus, Time2) %>% 
+  dplyr::summarise(count = n(), d13C_mean = mean(d13C, na.rm = TRUE), sd_d13C = sd(d13C, na.rm = TRUE))
+```
+
+```{r}
+host %>%
+  group_by(Region, Genus, Time2, Treatment) %>% 
+  dplyr::summarise(count = n(), d13C_mean = mean(d13C, na.rm = TRUE), sd_d13C = sd(d13C, na.rm = TRUE))
+```
+
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.d13C.lme, pairwise ~ Time2, adjust = "tukey")
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.d13C.lme, pairwise ~ Treatment, adjust = "tukey")
+```
+
+```{r}
+host %>%
+  group_by(Treatment) %>% 
+  dplyr::summarise(count = n(), d13C_mean = mean(d13C, na.rm = TRUE), sd_d13C = sd(d13C, na.rm = TRUE))
+```
+
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(host.d13C.lme)
+#plot(ranef(host.d13C.lm))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(host.d13C.lme, level=2)
+plot(host.d13C.lme)
+hist(residuals(host.d13C.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(host.d13C.lme, ~ranef(., level=1))
+```
+
+```{r}
+plot(allEffects(host.d13C.lme), ylab="Host d13C")
+```
+
+########################################################################
+
+### Test whether holobiont IDs can be collapsed within a genus within each region
+
+```{r}
+host.Heron.stylo <- subset(host, Region == "Heron")
+host.Heron.poci <- subset(host.Heron.stylo, Genus == "Pocillopora")
+host.Heron.stylo <- subset(host.Heron.stylo, Genus == "Stylophora")
+host.Heron.poci <- droplevels(host.Heron.poci)
+host.Heron.stylo <- droplevels(host.Heron.stylo)
+```
+
+Heron Stylo
+```{r}
+levels(host.Heron.stylo$Holobiont_ID)
+```
+
+```{r}
+host.d13C.lme.Heron.stylo <- lme(d13C ~ Holobiont_ID, random = ~1|Site, data = host.Heron.stylo, na.action = na.exclude)
+```
+
+```{r}
+summary(host.d13C.lme.Heron.stylo)
+```
+
+```{r}
+Anova(host.d13C.lme.Heron.stylo, type = 3)
+```
+
+
+Heron Poci
+```{r}
+levels(host.Heron.poci$Holobiont_ID2)
+```
+
+```{r}
+host.d13C.lme.Heron.poci <- lme(d13C ~ Holobiont_ID2, random = ~1|Site, data = host.Heron.poci, na.action = na.exclude) #* Time2
+```
+
+```{r}
+summary(host.d13C.lme.Heron.poci)
+```
+
+```{r}
+Anova(host.d13C.lme.Heron.poci, type = 3)
+```
+
+```{r}
+plot(allEffects(host.d13C.lme.Heron.poci), ylab="Host d13C")
+```
+
+```{r}
+host.Lizard.stylo <- subset(host, Region == "Lizard")
+host.Lizard.poci <- subset(host.Lizard.stylo, Genus == "Pocillopora")
+host.Lizard.stylo <- subset(host.Lizard.stylo, Genus == "Stylophora")
+host.Lizard.poci <- droplevels(host.Lizard.poci)
+host.Lizard.stylo <- droplevels(host.Lizard.stylo)
+```
+
+
+Lizard Stylo - only one Stylophora
+```{r}
+levels(host.Lizard.stylo$Holobiont_ID)
+```
+
+Lizard Poci
+```{r}
+levels(host.Lizard.poci$Holobiont_ID)
+```
+
+```{r}
+host.d13C.lme.Lizard.poci <- lme(d13C ~ Holobiont_ID, random = ~1|Site, data = host.Lizard.poci, na.action = na.exclude)
+```
+
+```{r}
+summary(host.d13C.lme.Lizard.poci)
+```
+
+```{r}
+Anova(host.d13C.lme.Lizard.poci, type = 3)
+```
+
+
+```{r}
+plot(allEffects(host.d13C.lme.Lizard.poci), ylab="Host d13C")
+```
+
+
+########################################################################
+
+# Protein vs. d13C
+
+```{r}
+prot.d13C.lm <- lm(d13C ~ Protein_cm2, data = host)  
+summary(prot.d13C.lm)
+```
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-3.8101 -0.5574  0.0950  0.5766  2.0131 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -16.5279     0.1688 -97.935   <2e-16 ***
+Protein_cm2   0.3432     0.1428   2.403   0.0174 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.9092 on 165 degrees of freedom
+Multiple R-squared:  0.03381,	Adjusted R-squared:  0.02795 
+F-statistic: 5.774 on 1 and 165 DF,  p-value: 0.01738
+
+
+```{r}
+Anova(prot.d13C.lm, type = 3)
+```
+
+Anova Table (Type III tests)
+
+Response: d13C
+            Sum Sq  Df   F value  Pr(>F)    
+(Intercept) 7928.2   1 9591.1883 < 2e-16 ***
+Protein_cm2    4.8   1    5.7735 0.01738 *  
+Residuals    136.4 165    
+
+
+All timepoints
+```{r}
+plot <- ggplot(host, aes(x=Protein_cm2, y=d13C, color = Holobiont_ID, shape=Treatment)) +
+  #facet_wrap(~Genus) +
+  geom_point(size=1.5, position=position_dodge(width=0.5),stat="identity") +
+  geom_smooth(method='lm',fullrange = FALSE, aes(group=FALSE), color = "black") +
+  ylab(expression("Host  " * {delta}^13*C~('\u2030'))) +
+    xlab(expression("Host Protein cm"^2)) +
+  scale_y_continuous(limits = c(-20,-14), breaks = c(-20, -19, -18, -17, -16, -15, -14)) +
+  scale_x_continuous(limits = c(0,4), breaks = c(0, 1, 2, 3, 4)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4))) + #, "NA"=(pch=0)
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  #scale_color_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061")) + #FINAL COLOR SCHEME
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="right",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12)) #axis.title.x=element_blank(),
+
+plot
+
+#ggsave("GBR_Host_Protein_d13C_all.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+Before only
+```{r}
+plot <- host %>% 
+  filter(Time == "Before") %>% 
+  ggplot(aes(x=Protein_cm2, y=d13C, color = Holobiont_ID, shape=Treatment)) +
+  #facet_wrap(~Genus) +
+  geom_point(size=1.5, position=position_dodge(width=0.5),stat="identity") +
+  geom_smooth(method='lm',fullrange = FALSE, aes(group=FALSE), color = "black") +
+  ylab(expression("Host  " * {delta}^13*C~('\u2030'))) +
+    xlab(expression("Host Protein cm"^2)) +
+  scale_y_continuous(limits = c(-20,-14), breaks = c(-20, -19, -18, -17, -16, -15, -14)) +
+  scale_x_continuous(limits = c(0,4), breaks = c(0, 1, 2, 3, 4)) +
+  #scale_x_continuous(limits = c(0,2.5), breaks = c(0, 0.5, 1, 1.5, 2, 2.5)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4))) + #, "NA"=(pch=0)
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  #scale_color_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061")) + #FINAL COLOR SCHEME
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="right",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12)) #axis.title.x=element_blank(),
+
+plot
+
+#ggsave("GBR_Host_Protein_d13C_Before.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+During/After only
+```{r}
+plot <- host %>% 
+  filter(Time2 != "Before") %>% 
+  ggplot(aes(x=Protein_cm2, y=d13C, color = Holobiont_ID, shape=Treatment)) +
+  #facet_wrap(~Genus) +
+  geom_point(size=1.5, position=position_dodge(width=0.5),stat="identity") +
+  geom_smooth(method='lm',fullrange = FALSE, aes(group=FALSE), color = "black") +
+  ylab(expression("Host  " * {delta}^13*C~('\u2030'))) +
+    xlab(expression("Host Protein cm"^2)) +
+  scale_y_continuous(limits = c(-20,-14), breaks = c(-20, -19, -18, -17, -16, -15, -14)) +
+  scale_x_continuous(limits = c(0,4), breaks = c(0, 1, 2, 3, 4)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4))) + #, "NA"=(pch=0)
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  #scale_color_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061")) + #FINAL COLOR SCHEME
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="right",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12)) #axis.title.x=element_blank(),
+
+plot
+
+#ggsave("GBR_Host_Protein_d13C_During-After.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+Pocillopora only
+```{r}
+plot <- host %>% 
+  filter(Genus == "Pocillopora") %>% 
+  ggplot(aes(x=Protein_cm2, y=d13C, color = Holobiont_ID, shape=Treatment)) +
+  #facet_wrap(~Genus) +
+  geom_point(size=1.5, position=position_dodge(width=0.5),stat="identity") +
+  geom_smooth(method='lm',fullrange = FALSE, aes(group=FALSE), color = "black") +
+  ylab(expression("Host  " * {delta}^13*C~('\u2030'))) +
+    xlab(expression("Host Protein cm"^2)) +
+  scale_y_continuous(limits = c(-20,-14), breaks = c(-20, -19, -18, -17, -16, -15, -14)) +
+  scale_x_continuous(limits = c(0,4), breaks = c(0, 1, 2, 3, 4)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4))) + #, "NA"=(pch=0)
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  #scale_color_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061")) + #FINAL COLOR SCHEME
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="right",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12)) #axis.title.x=element_blank(),
+
+plot
+
+#ggsave("GBR_Host_Protein_d13C_Poci.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+Stylophora only
+```{r}
+plot <- host %>% 
+  filter(Genus == "Stylophora") %>% 
+  ggplot(aes(x=Protein_cm2, y=d13C, color = Holobiont_ID, shape=Treatment)) +
+  #facet_wrap(~Genus) +
+  geom_point(size=1.5, position=position_dodge(width=0.5),stat="identity") +
+  geom_smooth(method='lm',fullrange = FALSE, aes(group=FALSE), color = "black") +
+  ylab(expression("Host  " * {delta}^13*C~('\u2030'))) +
+    xlab(expression("Host Protein cm"^2)) +
+  scale_y_continuous(limits = c(-20,-14), breaks = c(-20, -19, -18, -17, -16, -15, -14)) +
+  scale_x_continuous(limits = c(0,4), breaks = c(0, 1, 2, 3, 4)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4))) + #, "NA"=(pch=0)
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  #scale_color_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+  scale_color_manual("Holobiont", values=c("S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "black", "Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de")) + 
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="right",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12)) #axis.title.x=element_blank(),
+
+plot
+
+#ggsave("GBR_Host_Protein_d13C_Stylo.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+
+########################################################################
+
+# Protein vs. Big delta 13C
+
+```{r}
+prot.Big.delta.13C.lm <- lm(Big.delta.13C ~ Protein_cm2, data = host)  
+summary(prot.Big.delta.13C.lm)
+```
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-3.1419 -0.3407 -0.0566  0.2828  3.4953 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)  
+(Intercept)   0.3325     0.2522   1.318   0.1910  
+Protein_cm2  -0.5296     0.2503  -2.116   0.0374 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.8952 on 83 degrees of freedom
+  (82 observations deleted due to missingness)
+Multiple R-squared:  0.05117,	Adjusted R-squared:  0.03974 
+F-statistic: 4.476 on 1 and 83 DF,  p-value: 0.03736
+
+
+```{r}
+Anova(prot.Big.delta.13C.lm, type = 3)
+```
+
+
+Anova Table (Type III tests)
+
+Response: Big.delta.13C
+            Sum Sq Df F value  Pr(>F)  
+(Intercept)  1.393  1  1.7381 0.19100  
+Protein_cm2  3.587  1  4.4764 0.03736 *
+Residuals   66.517 83                                    
+
+
+Regression line ends with data (not extending beyond it)
+```{r}
+plot <- ggplot(host, aes(x=Protein_cm2, y=Big.delta.13C, color = Holobiont_ID, shape=Treatment)) +
+  #facet_wrap(~Genus) +
+  geom_point(size=1.5, position=position_dodge(width=0.5),stat="identity") +
+  geom_smooth(method='lm',fullrange = FALSE, aes(group=FALSE), color = "black") +
+  ylab(expression({delta}^13*C ~" "[host-symbiont]~'(\u2030)')) +
+    xlab(expression("Host Protein cm"^2)) +
+  scale_y_continuous(limits = c(-3.25, 3.5), breaks = c(-3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5)) +
+  scale_x_continuous(limits = c(0,2.5), breaks = c(0, 0.5, 1, 1.5, 2, 2.5)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4))) + #, "NA"=(pch=0)
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  #scale_color_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061")) + #FINAL COLOR SCHEME
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="right",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12)) #axis.title.x=element_blank(),
+
+plot
+
+#ggsave("GBR_Host_Protein_Big-delta-13C_Before_axes_2023-10_Final.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+
+#ggsave("GBR_Host_Protein_Big-delta-13C_Before_axes_2023-10_Final_legend.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+```{r}
+host.stylo <- subset(host, Genus == "Stylophora")
+host.stylo <- droplevels(host.stylo)
+```
+
+
+Stylophora only
+```{r}
+prot.Big.delta.13C.lm.Stylo <- lm(Big.delta.13C ~ Protein_cm2, data = host.stylo)  
+summary(prot.Big.delta.13C.lm.Stylo)
+```
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1.14627 -0.30493 -0.03873  0.23605  2.02282 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   0.6912     0.2236   3.091 0.003454 ** 
+Protein_cm2  -1.0441     0.2447  -4.267 0.000104 ***
+
+
+```{r}
+Anova(prot.Big.delta.13C.lm.Stylo, type = 3)
+```
+
+Anova Table (Type III tests)
+
+Response: Big.delta.13C
+             Sum Sq Df F value    Pr(>F)    
+(Intercept)  2.7080  1  9.5548 0.0034541 ** 
+Protein_cm2  5.1596  1 18.2052 0.0001037 ***
+Residuals   12.4702 44 
+
+```{r}
+plot <- ggplot(host.stylo, aes(x=Protein_cm2, y=Big.delta.13C, color = Holobiont_ID, shape=Treatment)) +
+  #facet_wrap(~Genus) +
+  geom_point(size=1.5, position=position_dodge(width=0.5),stat="identity") +
+  geom_smooth(method='lm',fullrange = FALSE, aes(group=FALSE), color = "black") +
+  ylab(expression({delta}^13*C ~" "[host-symbiont]~'(\u2030)')) +
+    xlab(expression("Host Protein cm"^2)) +
+  scale_y_continuous(limits = c(-3.25, 3.5), breaks = c(-3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5)) +
+  scale_x_continuous(limits = c(0,2.5), breaks = c(0, 0.5, 1, 1.5, 2, 2.5)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4))) + #, "NA"=(pch=0)
+  #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061")) + #FINAL COLOR SCHEME
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="right",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12)) #axis.title.x=element_blank(),
+
+plot
+
+#ggsave("GBR_Host_Protein_Big-delta-13C_Before_axes_Stylo-only.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+
+#ggsave("GBR_Host_Protein_Big-delta-13C_Before_axes_Stylo-only_legend.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+```{r}
+host.poci <- subset(host, Genus == "Pocillopora")
+host.poci <- droplevels(host.poci)
+```
+
+
+Pocillopora only
+```{r}
+prot.Big.delta.13C.lm.Poci <- lm(Big.delta.13C ~ Protein_cm2, data = host.poci)  
+summary(prot.Big.delta.13C.lm.Poci)
+```
+
+```{r}
+Anova(prot.Big.delta.13C.lm.Poci, type = 3)
+```
+
+
+########################################################################
+
+# Host CN
+
+```{r}
+par(mfrow=c(1,4))
+plot(CN_molar ~ Region * Genus * Treatment + Time, data = host)
+```
+
+```{r}
+hist(host$CN_molar)
+```
+
+```{r}
+qqnorm(host$CN_molar, ylab="Sample Quantiles")
+qqline(host$CN_molar, col="red")
+```
+
+# Host CN  - LME
+```{r}
+host.CN.lme <- lme(CN_molar ~ Region * Genus * Treatment * Time2, random = ~1|Site, data = host, na.action = na.exclude)
+```
+
+
+```{r}
+summary(host.CN.lme)
+```
+
+```{r}
+Anova(host.CN.lme, type = 3)
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.CN.lme, pairwise ~ Region * Genus, adjust = "tukey")
+```
+
+```{r}
+host %>%
+  group_by(Region, Genus) %>% 
+  dplyr::summarise(count = n(), CN_mean = mean(CN_molar, na.rm = TRUE), sd_CN = sd(CN_molar, na.rm = TRUE))
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.CN.lme, pairwise ~ Region * Treatment, adjust = "tukey")
+```
+
+```{r}
+host %>%
+  group_by(Region, Treatment) %>% 
+  dplyr::summarise(count = n(), CN_mean = mean(CN_molar, na.rm = TRUE), sd_CN = sd(CN_molar, na.rm = TRUE))
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.CN.lme, pairwise ~ Time2, adjust = "tukey")
+```
+
+```{r}
+host %>%
+  group_by(Time2) %>% 
+  dplyr::summarise(count = n(), CN_mean = mean(CN_molar, na.rm = TRUE), sd_CN = sd(CN_molar, na.rm = TRUE))
+```
+
+```{r}
+host %>%
+  group_by(Time) %>% 
+  dplyr::summarise(count = n(), CN_mean = mean(CN_molar, na.rm = TRUE), sd_CN = sd(CN_molar, na.rm = TRUE))
+```
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(host.CN.lme)
+#plot(ranef(host.CN.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(host.CN.lme, level=2)
+plot(host.CN.lme)
+hist(residuals(host.CN.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(host.CN.lme, ~ranef(., level=1))
+```
+
+
+```{r}
+plot(allEffects(host.CN.lme), ylab="Host CN")
+```
+
+```{r}
+CNregionspecies <- summarySE(host, measurevar='CN_molar', groupvars=c('Region', 'Genus', 'Time', 'Treatment'), na.rm=TRUE, conf.interval = 0.95)
+CNregionspecies
+```
+
+## Figure - Host CN over Time
+```{r}
+CNregionspecies$Region <- factor(CNregionspecies$Region, levels=c("Lizard","Heron"))
+CNregionspecies$Time <- factor(CNregionspecies$Time, levels=c("Before","During","After"))
+
+plot.CN <- ggplot(CNregionspecies, aes(x=Time, y=CN_molar, color = Region, shape=Treatment, group=interaction(Region, Genus, Treatment))) + #
+  facet_wrap(~Genus) +
+  geom_jitter(data = host, aes(y=CN_molar, x=Time, color=Region), alpha=0.2, position=position_jitterdodge()) +
+  geom_path(aes(group = interaction(Region, Genus, Treatment), stat="identity"), position=position_dodge(0.6)) +
+  geom_point(size=3, position=position_dodge(width=0.5), stat="identity") +
+  geom_errorbar(aes(group = interaction(Region, Genus), ymin=CN_molar-se, ymax=CN_molar+se, width= 0.5), position=position_dodge2(preserve = "single"),stat="identity") +
+  ylab("Host C:N") +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19), "NA"=(pch=0))) +
+  scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  #scale_fill_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+
+plot.CN
+```
+
+########################################################################
+
+# Host %C
+
+```{r}
+par(mfrow=c(1,4))
+plot(C_percent.weight.num ~ Region * Genus * Treatment + Time, data = host)
+```
+
+```{r}
+hist(host$C_percent.weight.num)
+```
+
+```{r}
+qqnorm(host$C_percent.weight.num, ylab="Sample Quantiles")
+qqline(host$C_percent.weight.num, col="red")
+```
+
+# Host %C  - LME
+```{r}
+host.C.lme <- lme(C_percent.weight.num ~ Region * Genus * Treatment * Time2, random = ~1|Site, data = host, na.action = na.exclude)
+```
+
+
+```{r}
+summary(host.C.lme)
+```
+
+```{r}
+Anova(host.C.lme, type = 3)
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.C.lme, pairwise ~ Region * Genus * Time2, adjust = "tukey", simple = "Time2") #, simple = "Region"
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.C.lme, pairwise ~ Region * Genus * Time2, adjust = "tukey") #, simple = "Region"
+```
+
+```{r}
+host %>%
+  group_by(Region, Genus, Time2) %>% 
+  dplyr::summarise(count = n(), C_mean = mean(C_percent.weight.num, na.rm = TRUE), sd_C = sd(C_percent.weight.num, na.rm = TRUE))
+```
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(host.C.lme)
+#plot(ranef(host.C.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(host.C.lme, level=2)
+plot(host.C.lme)
+hist(residuals(host.C.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(host.C.lme, ~ranef(., level=1))
+```
+
+
+```{r}
+plot(allEffects(host.C.lme), ylab="Host %C")
+```
+
+```{r}
+Cregionspecies <- summarySE(host, measurevar='C_percent.weight.num', groupvars=c('Region', 'Genus', 'Time', 'Treatment'), na.rm=TRUE, conf.interval = 0.95)
+Cregionspecies
+```
+
+## Figure - Host %C over Time - Genus
+```{r}
+Cregionspecies$Region <- factor(Cregionspecies$Region, levels=c("Lizard","Heron"))
+Cregionspecies$Time <- factor(Cregionspecies$Time, levels=c("Before","During","After"))
+
+plot.C <- ggplot(Cregionspecies, aes(x=Time, y=C_percent.weight.num, color = Region, shape=Treatment, group=interaction(Region, Genus, Treatment))) + 
+  facet_wrap(~Genus) +
+  geom_jitter(data = host, aes(y=C_percent.weight.num, x=Time, color=Region), alpha=0.2, position=position_jitterdodge()) +
+  geom_path(aes(group = interaction(Region, Genus, Treatment), stat="identity"), position=position_dodge(0.6)) +
+  geom_point(size=3, position=position_dodge(width=0.5), stat="identity") +
+  geom_errorbar(aes(group = interaction(Region, Genus, Treatment), ymin=C_percent.weight.num-se, ymax=C_percent.weight.num+se, width= 0.5), position=position_dodge2(preserve = "single"),stat="identity") +
+  ylab("Host %C") +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19), "NA"=(pch=0))) +
+  scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  #scale_fill_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+
+plot.C
+```
+
+## Figure - Host %C over Time - Holobiont
+```{r}
+Cregionspecies <- summarySE(data = subset(host,!is.na(Holobiont_ID)), measurevar='C_percent.weight.num', groupvars=c('Region', 'Holobiont_ID', 'Time', 'Treatment'), na.rm=TRUE, conf.interval = 0.95)
+Cregionspecies
+
+Cregionspecies$Region <- factor(Cregionspecies$Region, levels=c("Lizard","Heron"))
+Cregionspecies$Time <- factor(Cregionspecies$Time, levels=c("Before","During","After"))
+
+plot.C <- ggplot(Cregionspecies, aes(x=Time, y=C_percent.weight.num, color = Holobiont_ID, shape=Treatment, group=interaction(Treatment))) + 
+  facet_wrap(~Holobiont_ID) + #, ncol = 8
+  geom_jitter(data = subset(host,!is.na(Holobiont_ID)), aes(y=C_percent.weight.num, x=Time, color=Holobiont_ID), alpha=0.2, position=position_jitterdodge()) +
+  geom_path(aes(group = interaction(Treatment), stat="identity"), position=position_dodge(0.6)) +
+  geom_point(size=3, position=position_dodge(width=0.5), stat="identity") +
+  geom_errorbar(aes(group = interaction(Treatment), ymin=C_percent.weight.num-se, ymax=C_percent.weight.num+se, width= 0.5), position=position_dodge2(preserve = "single"),stat="identity") +
+  ylab("Host %C") +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=19),"Juvenile"=(pch=4), "NA"=(pch=0))) +
+  scale_color_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#FDDBC7", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+
+plot.C
+
+#ggsave("GBR_Host-C_Time_Holobiont.pdf", plot = plot.C, device = cairo_pdf, width = 6, height = 5, units = "in", dpi = 1200)
+
+#ggsave("GBR_Host-C_Time_Holobiont_horizontal.pdf", plot = plot.C, device = cairo_pdf, width = 14, height = 3, units = "in", dpi = 1200)
+```
+
+
+########################################################################
+
+# Host %N
+
+```{r}
+par(mfrow=c(1,4))
+plot(N_percent.weight.num ~ Region * Genus * Treatment + Time, data = host)
+```
+
+```{r}
+hist(host$N_percent.weight.num)
+```
+
+```{r}
+qqnorm(host$N_percent.weight.num, ylab="Sample Quantiles")
+qqline(host$N_percent.weight.num, col="red")
+```
+
+# Host %N  - LME
+```{r}
+host.N.lme <- lme(N_percent.weight.num ~ Region * Genus * Treatment * Time2, random = ~1|Site, data = host, na.action = na.exclude)
+```
+
+```{r}
+summary(host.N.lme)
+```
+
+```{r}
+Anova(host.N.lme, type = 3)
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.N.lme, pairwise ~ Region * Time2, adjust = "tukey")
+```
+
+```{r}
+host %>%
+  group_by(Region, Time2) %>% 
+  dplyr::summarise(count = n(), N_mean = mean(N_percent.weight.num, na.rm = TRUE), sd_N = sd(N_percent.weight.num, na.rm = TRUE))
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(host.N.lme, pairwise ~ Genus * Time2, adjust = "tukey")
+```
+
+```{r}
+host %>%
+  group_by(Genus, Time2) %>% 
+  dplyr::summarise(count = n(), N_mean = mean(N_percent.weight.num, na.rm = TRUE), sd_N = sd(N_percent.weight.num, na.rm = TRUE))
+```
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(host.N.lme)
+#plot(ranef(host.N.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(host.N.lme, level=2)
+plot(host.N.lme)
+hist(residuals(host.N.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(host.N.lme, ~ranef(., level=1))
+```
+
+```{r}
+plot(allEffects(host.N.lme), ylab="Host %N")
+```
+
+
+```{r}
+Nregionspecies <- summarySE(host, measurevar='N_percent.weight.num', groupvars=c('Region', 'Genus', 'Time', 'Treatment'), na.rm=TRUE, conf.interval = 0.95)
+Nregionspecies
+```
+
+## Figure - Host %N over Time
+```{r}
+Nregionspecies$Region <- factor(Nregionspecies$Region, levels=c("Lizard","Heron"))
+Nregionspecies$Time <- factor(Nregionspecies$Time, levels=c("Before","During","After"))
+
+plot.N <- ggplot(Nregionspecies, aes(x=Time, y=N_percent.weight.num, color = Region, shape=Treatment, group=interaction(Region, Genus, Treatment))) + 
+  facet_wrap(~Genus) +
+  geom_jitter(data = host, aes(y=N_percent.weight.num, x=Time, color=Region), alpha=0.2, position=position_jitterdodge()) +
+  geom_path(aes(group = interaction(Region, Genus, Treatment), stat="identity"), position=position_dodge(0.6)) +
+  geom_point(size=3, position=position_dodge(width=0.5), stat="identity") +
+  geom_errorbar(aes(group = interaction(Region, Genus, Treatment), ymin=N_percent.weight.num-se, ymax=N_percent.weight.num+se, width= 0.5), position=position_dodge2(preserve = "single"),stat="identity") +
+  ylab("Host %N") +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=4),"Juvenile"=(pch=19), "NA"=(pch=0))) +
+  scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  #scale_fill_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(face="italic", size=12))
+
+plot.N
+```
+
+
+########################################################################
+
+# Big delta 15N (Before only)
+
+```{r}
+par(mfrow=c(1,3))
+plot(Big.delta.15N ~ Region * Genus * Treatment, data = host)
+```
+
+```{r}
+hist(host$Big.delta.15N)
+```
+
+```{r}
+qqnorm(host$Big.delta.15N, ylab="Sample Quantiles")
+qqline(host$Big.delta.15N, col="red")
+```
+
+# Host Big delta 15N - LME
+```{r}
+host.big.d15N.lme <- lme(Big.delta.15N ~ Region * Genus * Treatment, random = ~1|Site, data = host, na.action = na.exclude)
+```
+
+```{r}
+summary(host.big.d15N.lme)
+```
+
+```{r}
+Anova(host.big.d15N.lme, type = 3)
+```
+
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(host.big.d15N.lme)
+#plot(ranef(host.big.d15N.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(host.big.d15N.lme, level=2)
+plot(host.big.d15N.lme)
+hist(residuals(host.big.d15N.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(host.big.d15N.lme, ~ranef(., level=1))
+```
+
+```{r}
+plot(allEffects(host.big.d15N.lme), ylab="Host Big delta 15N")
+```
+
+```{r}
+host %>%
+  group_by(Region, Genus, Treatment) %>% 
+  dplyr::summarise(count = n(), big.delta.15N_mean = mean(Big.delta.15N, na.rm = TRUE), sd_big.delta.15N = sd(Big.delta.15N, na.rm = TRUE))
+```
+
+```{r}
+summary <- host %>%
+  group_by(Region, Holobiont_ID2, Treatment) %>% 
+  dplyr::summarise(count = n(), big.delta.15N_mean = mean(Big.delta.15N, na.rm = TRUE), sd_big.delta.15N = sd(Big.delta.15N, na.rm = TRUE))
+
+summary
+```
+
+
+################################################################
+
+# Big delta 13C (Before only)
+
+```{r}
+par(mfrow=c(1,3))
+plot(Big.delta.13C ~ Region * Genus * Treatment, data = host)
+```
+
+```{r}
+hist(host$Big.delta.13C)
+```
+
+```{r}
+qqnorm(host$Big.delta.13C, ylab="Sample Quantiles")
+qqline(host$Big.delta.13C, col="red")
+```
+
+# Host Big.delta.13C - LME
+```{r}
+host.big.d13C.lme <- lme(Big.delta.13C ~ Region * Genus * Treatment, random = ~1|Site, data = host, na.action = na.exclude)
+```
+
+```{r}
+summary(host.big.d13C.lme)
+```
+
+```{r}
+Anova(host.big.d13C.lme, type = 3)
+```
+
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(host.big.d13C.lme)
+#plot(ranef(host.big.d13C.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(host.big.d13C.lme, level=2)
+plot(host.big.d13C.lme)
+hist(residuals(host.big.d13C.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(host.big.d13C.lme, ~ranef(., level=1))
+```
+
+```{r}
+plot(allEffects(host.big.d13C.lme), ylab="Host Big delta 13C")
+```
+
+```{r}
+host %>%
+  group_by(Region, Genus, Treatment) %>% 
+  dplyr::summarise(count = n(), Big.delta.13C_mean = mean(Big.delta.13C, na.rm = TRUE), sd_Big.delta.13C = sd(Big.delta.13C, na.rm = TRUE))
+```
+
+
+```{r}
+host %>%
+  group_by(Region) %>% 
+  dplyr::summarise(count = n(), Big.delta.13C_mean = mean(Big.delta.13C, na.rm = TRUE), sd_Big.delta.13C = sd(Big.delta.13C, na.rm = TRUE))
+```
+
+```{r}
+summary <- host %>%
+  group_by(Region, Holobiont_ID, Treatment) %>% 
+  dplyr::summarise(count = n(), big.delta.13C_mean = mean(Big.delta.13C, na.rm = TRUE), sd_big.delta.13C = sd(Big.delta.13C, na.rm = TRUE), big.delta.15N_mean = mean(Big.delta.15N, na.rm = TRUE), sd_big.delta.15N = sd(Big.delta.15N, na.rm = TRUE))
+
+summary
+```
+
+```{r}
+host %>% 
+  ggplot(aes(x=Region, y=Big.delta.13C)) + 
+    geom_boxplot() +
+    geom_jitter() +
+    theme_classic()
+```
+
+
+########################################################################
+
+# Plankton d15N
+
+```{r}
+par(mfrow=c(1,2))
+plot(d15N ~ Region * Fraction.detail, data = plank) #+ Time
+```
+
+```{r}
+hist(plank$d15N)
+```
+
+```{r}
+qqnorm(plank$d15N, ylab="Sample Quantiles")
+qqline(plank$d15N, col="red")
+```
+
+# Plankton d15N - LME
+```{r}
+plank.d15N.lme <- lme(d15N ~ Region * Fraction.detail, random = ~1|Site, data = plank, na.action = na.exclude)
+```
+
+```{r}
+summary(plank.d15N.lme)
+```
+
+```{r}
+Anova(plank.d15N.lme, type = 3)
+```
+
+Analysis of Deviance Table (Type III tests)
+
+Response: d15N
+                          Chisq Df Pr(>Chisq)    
+(Intercept)            138.4449  1    < 2e-16 ***
+Region                   0.1525  1    0.69619    
+Fraction.detail          8.2197  2    0.01641 *  
+Region:Fraction.detail   3.5524  2    0.16928      
+
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(plank.d15N.lme, pairwise ~ Fraction.detail, adjust = "tukey")
+```
+
+$emmeans
+ Fraction.detail      emmean    SE df lower.CL upper.CL
+ Plankton, >300 um      5.67 0.333  4     4.75     6.59
+ Plankton, 153-300 um   4.44 0.342  4     3.49     5.39
+ Plankton, 65-153 um    3.63 0.353  4     2.65     4.61
+
+Results are averaged over the levels of: Region 
+Degrees-of-freedom method: containment 
+Confidence level used: 0.95 
+
+$contrasts
+ contrast                                       estimate    SE df t.ratio p.value
+ Plankton, >300 um - (Plankton, 153-300 um)        1.233 0.477 47   2.583  0.0341
+ Plankton, >300 um - (Plankton, 65-153 um)         2.039 0.485 47   4.201  0.0003
+ (Plankton, 153-300 um) - (Plankton, 65-153 um)    0.806 0.492 47   1.639  0.2395
+
+Results are averaged over the levels of: Region 
+Degrees-of-freedom method: containment 
+P value adjustment: tukey method for comparing a family of 3 estimates
+
+
+```{r}
+plank %>%
+  group_by(Fraction.detail) %>% 
+  dplyr::summarise(count = n(), d15N_mean = mean(d15N, na.rm = TRUE), sd_d15N = sd(d15N, na.rm = TRUE))
+```
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(plank.d15N.lme)
+#plot(ranef(plank.d15N.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(plank.d15N.lme, level=2)
+plot(plank.d15N.lme)
+hist(residuals(plank.d15N.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(plank.d15N.lme, ~ranef(., level=1))
+```
+
+```{r}
+plot(allEffects(plank.d15N.lme), ylab="Plankton d15N")
+```
+
+*Trend of regional differences middle and smaller fractions but large varaibility*
+```{r}
+plank %>%
+  group_by(Region, Fraction.detail) %>% 
+  dplyr::summarise(count = n(), d15N_mean = mean(d15N, na.rm = TRUE), sd_d15N = sd(d15N, na.rm = TRUE))
+```
+
+
+################################################################
+
+# Plankton d13C
+
+```{r}
+par(mfrow=c(1,2))
+plot(d13C ~ Region * Fraction.detail, data = plank)
+```
+
+```{r}
+hist(plank$d13C)
+```
+
+```{r}
+qqnorm(plank$d13C, ylab="Sample Quantiles")
+qqline(plank$d13C, col="red")
+```
+
+# Plankton d13C- LME
+```{r}
+plank.d13C.lme <- lme(d13C ~ Region * Fraction.detail, random = ~1|Site, data = plank, na.action = na.exclude)
+```
+
+
+```{r}
+summary(plank.d13C.lme)
+```
+
+```{r}
+Anova(plank.d13C.lme, type = 3)
+```
+
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(plank.d13C.lme, pairwise ~ Region * Fraction.detail, adjust = "tukey")
+```
+
+
+```{r}
+plank %>%
+  group_by(Region, Fraction.detail) %>% 
+  dplyr::summarise(count = n(), d13C_mean = mean(d13C, na.rm = TRUE), sd_d13C = sd(d13C, na.rm = TRUE))
+```
+
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(plank.d13C.lme)
+#plot(ranef(plank.d13C.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(plank.d13C.lme, level=2)
+plot(plank.d13C.lme)
+hist(residuals(plank.d13C.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(plank.d13C.lme, ~ranef(., level=1))
+```
+
+```{r}
+plot(allEffects(plank.d13C.lme), ylab="Plankton d13C")
+```
+
+#############################################################################
+
+# POM
+
+```{r}
+pom <- subset(data.w.plank, Fraction == "POM")
+pom <- droplevels(pom)
+dim(pom)
+```
+
+# POM d15N
+
+```{r}
+plot(d15N ~ Region, data = pom)
+```
+
+```{r}
+hist(pom$d15N)
+```
+
+```{r}
+qqnorm(pom$d15N, ylab="Sample Quantiles")
+qqline(pom$d15N, col="red")
+```
+
+# POM d15N - LME
+```{r}
+pom.d15N.lme <- lme(d15N ~ Region, random = ~1|Site, data = pom, na.action = na.exclude)
+```
+
+```{r}
+summary(pom.d15N.lme)
+```
+
+```{r}
+Anova(pom.d15N.lme, type = 3)
+```
+
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(pom.d15N.lme, pairwise ~ Region, adjust = "tukey")
+```
+
+```{r}
+pom %>%
+  group_by(Region) %>% 
+  dplyr::summarise(count = n(), d15N_mean = mean(d15N, na.rm = TRUE), sd_d15N = sd(d15N, na.rm = TRUE))
+```
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(pom.d15N.lme)
+#plot(ranef(pom.d15N.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(pom.d15N.lme, level=2)
+plot(pom.d15N.lme)
+hist(residuals(pom.d15N.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(pom.d15N.lme, ~ranef(., level=1))
+```
+
+```{r}
+plot(allEffects(pom.d15N.lme), ylab="POM d15N")
+```
+
+
+##########################################################################
+
+# POM d13C
+
+```{r}
+#par(mfrow=c(1,4))
+plot(d13C ~ Region, data = pom)
+```
+
+```{r}
+hist(pom$d13C)
+```
+
+```{r}
+qqnorm(pom$d13C, ylab="Sample Quantiles")
+qqline(pom$d13C, col="red")
+```
+
+# POM d13C - LME
+```{r}
+pom.d13C.lme <- lme(d13C ~ Region, random = ~1|Site, data = pom, na.action = na.exclude)
+```
+
+```{r}
+summary(pom.d13C.lme)
+```
+
+```{r}
+Anova(pom.d13C.lme, type = 3)
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(pom.d13C.lme, pairwise ~ Region, adjust = "tukey")
+```
+
+```{r}
+pom %>%
+  group_by(Region) %>% 
+  dplyr::summarise(count = n(), d13C_mean = mean(d13C, na.rm = TRUE), sd_d13C = sd(d13C, na.rm = TRUE))
+```
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(pom.d13C.lme)
+#plot(ranef(pom.d13C.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(pom.d13C.lme, level=2)
+plot(pom.d13C.lme)
+hist(residuals(pom.d13C.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(pom.d13C.lme, ~ranef(., level=1))
+```
+
+```{r}
+plot(allEffects(pom.d13C.lme), ylab="POM d13C")
+```
+
+
+###########################################################################
+
+# Symbiont (Before only)
+
+```{r}
+sym <- subset(data.w.plank, Fraction == "Symbiont")
+sym <- droplevels(sym)
+dim(sym)
+```
+
+
+Only a handful of samples for these genotypes, remove for plots
+```{r}
+sym.select <- subset(sym, Holobiont_ID != "Pdam, C. latusorum")
+sym.select <- subset(sym.select, Holobiont_ID != "S. pistillata, ")
+sym.select <- droplevels(sym.select)
+dim(sym.select)
+```
+
+
+```{r}
+sym.summary <- summarySE(sym.select, measurevar='d13C', groupvars=c("Treatment", "Holobiont_ID"), na.rm=TRUE, conf.interval = 0.95)
+sym.summary
+
+plot <- ggplot(data = subset(sym.summary,!is.na(Holobiont_ID)), aes(y=d13C, x=Holobiont_ID, color=Holobiont_ID, shape=Treatment)) + 
+  geom_jitter(data = subset(sym.select,!is.na(Holobiont_ID)), aes(y=d13C,x=Holobiont_ID, color=Holobiont_ID, shape=Treatment), alpha=0.8, position=position_dodge(0.5)) +
+  geom_point(size=3, position=position_dodge(0.3),stat="identity") + #, color='black'
+  #facet_wrap(~Genus) +
+  geom_errorbar(aes(ymin=d13C-se, ymax=d13C+se, width= 0.7),  position=position_dodge(0.3),stat="identity") + #, color='black'
+  #geom_path(aes(group = interaction(Treatment,Genus,Region), stat="identity"), position=position_dodge(0.3), color='black') +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  #scale_color_brewer(palette = "RdBu")+
+  ylab(expression("Symbiont  " * {delta}^13*C ~'(\u2030)')) +
+  scale_y_continuous(limits = c(-21.3, -13.7), breaks = c(-21, -20, -19, -18, -17, -16, -15, -14)) +
+  scale_x_discrete(labels = scales::label_wrap(10)) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "S. pistillata, C35a group"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C33a_sGBR"="#053061", "NA"='white')) + #FINAL COLOR SCHEME ##d9d9d9  #"Pdam, C. latusorum"="#2166ac",
+  theme(axis.text.x=element_text(vjust=0.5, size=9, face="italic"), panel.background = element_rect(fill = "white", colour = "black"), legend.position = "none", axis.title.x=element_blank())   #
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+
+plot
+
+#ggsave("GBR_Sym_d13C_Region_Holobiont-ID_Before_Final.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+```{r}
+sym.summary <- summarySE(sym.select, measurevar='C_percent.weight.num', groupvars=c("Treatment", "Holobiont_ID"), na.rm=TRUE, conf.interval = 0.95)
+sym.summary
+
+#allhostd15N2$Region <- factor(allhostd15N2$Region, levels=c("Lizard","Heron"))
+#allhostd15N2$Time <- factor(allhostd15N2$Time, levels=c("Before","During","After"))
+
+plot <- ggplot(data = subset(sym.summary,!is.na(Holobiont_ID)), aes(y=C_percent.weight.num, x=Holobiont_ID, color=Holobiont_ID, shape=Treatment)) + 
+  geom_jitter(data = subset(sym.select,!is.na(Holobiont_ID)), aes(y=C_percent.weight.num,x=Holobiont_ID, color=Holobiont_ID, shape=Treatment), alpha=0.8, position=position_dodge(0.5)) +
+  geom_point(size=3, position=position_dodge(0.3),stat="identity") + #, color='black'
+  #facet_wrap(~Genus) +
+  geom_errorbar(aes(ymin=C_percent.weight.num-se, ymax=C_percent.weight.num+se, width= 0.7),  position=position_dodge(0.3),stat="identity") + #, color='black'
+  #geom_path(aes(group = interaction(Treatment,Genus,Region), stat="identity"), position=position_dodge(0.3), color='black') +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  #scale_color_brewer(palette = "RdBu")+
+  ylab(expression("Symbiont % Carbon ")) +
+  scale_y_continuous(breaks = c(0, 20, 40, 60, 80, 100)) +
+  scale_x_discrete(labels = scales::label_wrap(10)) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "S. pistillata, C35a group"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061", "NA"='white')) + #FINAL COLOR SCHEME ##d9d9d9
+  theme(axis.text.x=element_text(vjust=0.5, size=9, face="italic"), panel.background = element_rect(fill = "white", colour = "black"), legend.position = "none", axis.title.x=element_blank())   #
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+
+plot
+
+#ggsave("GBR_Sym_Percent-C_Holobiont-ID_Before_Final.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+# Symbiont %C
+
+```{r}
+par(mfrow=c(1,3))
+plot(C_percent.weight.num ~ Region * Genus * Treatment, data = sym)
+```
+
+```{r}
+hist(sym$C_percent.weight.num)
+```
+
+```{r}
+qqnorm(sym$C_percent.weight.num, ylab="Sample Quantiles")
+qqline(sym$C_percent.weight.num, col="red")
+```
+
+# Symbiont %C  - LME
+```{r}
+sym.C.lme <- lme(C_percent.weight.num ~ Region * Genus * Treatment, random = ~1|Site, data = sym, na.action = na.exclude)
+```
+
+
+```{r}
+summary(sym.C.lme)
+```
+
+```{r}
+Anova(sym.C.lme, type = 3)
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(sym.C.lme, pairwise ~ Region, adjust = "tukey") 
+```
+
+
+```{r}
+sym %>%
+  group_by(Region) %>% 
+  dplyr::summarise(count = n(), C_mean = mean(C_percent.weight.num, na.rm = TRUE), sd_C = sd(C_percent.weight.num, na.rm = TRUE))
+```
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(sym.C.lme)
+#plot(ranef(sym.C.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(sym.C.lme, level=2)
+plot(sym.C.lme)
+hist(residuals(sym.C.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(sym.C.lme, ~ranef(., level=1))
+```
+
+
+```{r}
+plot(allEffects(sym.C.lme), ylab="Symbiont %C")
+```
+
+```{r}
+Cregionspecies <- summarySE(sym, measurevar='C_percent.weight.num', groupvars=c('Region'), na.rm=TRUE, conf.interval = 0.95)
+Cregionspecies
+```
+
+################################################################
+
+# Symbiont CN
+
+```{r}
+par(mfrow=c(1,3))
+plot(CN_molar ~ Region * Genus * Treatment, data = sym)
+```
+
+```{r}
+hist(sym$CN_molar)
+```
+
+```{r}
+qqnorm(sym$CN_molar, ylab="Sample Quantiles")
+qqline(sym$CN_molar, col="red")
+```
+
+# Symbiont CN  - LME
+```{r}
+sym.CN.lme <- lme(CN_molar ~ Region * Genus * Treatment, random = ~1|Site, data = sym, na.action = na.exclude)
+```
+
+
+```{r}
+summary(sym.CN.lme)
+```
+
+```{r}
+Anova(sym.CN.lme, type = 3)
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(sym.CN.lme, pairwise ~ Region * Genus, adjust = "tukey") 
+```
+
+
+```{r}
+sym %>%
+  group_by(Region, Genus) %>% 
+  dplyr::summarise(count = n(), C_mean = mean(CN_molar, na.rm = TRUE), sd_C = sd(CN_molar, na.rm = TRUE))
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(sym.CN.lme, pairwise ~ Treatment, adjust = "tukey") 
+```
+
+```{r}
+sym %>%
+  group_by(Treatment) %>% 
+  dplyr::summarise(count = n(), C_mean = mean(CN_molar, na.rm = TRUE), sd_C = sd(CN_molar, na.rm = TRUE))
+```
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(sym.CN.lme)
+#plot(ranef(sym.C.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(sym.CN.lme, level=2)
+plot(sym.CN.lme)
+hist(residuals(sym.CN.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(sym.CN.lme, ~ranef(., level=1))
+```
+
+
+```{r}
+plot(allEffects(sym.CN.lme), ylab="Symbiont CN")
+```
+
+
+################################################################
+
+# Symbiont d15N 
+
+```{r}
+par(mfrow=c(1,3))
+plot(d15N ~ Region * Genus * Treatment, data = sym)
+```
+
+```{r}
+hist(sym$d15N)
+```
+
+```{r}
+qqnorm(sym$d15N, ylab="Sample Quantiles")
+qqline(sym$d15N, col="red")
+```
+
+# Symbiont d15N  - LME
+```{r}
+sym.d15N.lme <- lme(d15N ~ Region * Genus * Treatment, random = ~1|Site, data = sym, na.action = na.exclude)
+```
+
+
+```{r}
+summary(sym.d15N.lme)
+```
+
+```{r}
+Anova(sym.d15N.lme, type = 3)
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(sym.d15N.lme, pairwise ~ Genus * Treatment, adjust = "tukey") 
+```
+
+
+```{r}
+sym %>%
+  group_by(Genus, Treatment) %>% 
+  dplyr::summarise(count = n(), d15N_mean = mean(d15N, na.rm = TRUE), sd = sd(d15N, na.rm = TRUE))
+```
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(sym.d15N.lme)
+#plot(ranef(sym.d15N.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(sym.d15N.lme, level=2)
+plot(sym.d15N.lme)
+hist(residuals(sym.d15N.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(sym.d15N.lme, ~ranef(., level=1))
+```
+
+
+```{r}
+plot(allEffects(sym.d15N.lme), ylab="Symbiont d15N")
+```
+
+
+################################################################
+
+# Symbiont d13C
+
+```{r}
+par(mfrow=c(1,3))
+plot(d13C ~ Region * Genus * Treatment, data = sym)
+```
+
+```{r}
+hist(sym$d13C)
+```
+
+```{r}
+qqnorm(sym$d13C, ylab="Sample Quantiles")
+qqline(sym$d13C, col="red")
+```
+
+# Symbiont d13C  - LME
+```{r}
+sym.d13C.lme <- lme(d13C ~ Region * Genus * Treatment, random = ~1|Site, data = sym, na.action = na.exclude)
+```
+
+
+```{r}
+summary(sym.d13C.lme)
+```
+
+```{r}
+Anova(sym.d13C.lme, type = 3)
+```
+
+```{r}
+# Extract and display information on all pairwise comparisons of least-squares means
+emmeans(sym.d13C.lme, pairwise ~ Region, adjust = "tukey") 
+```
+
+
+```{r}
+sym %>%
+  group_by(Region) %>% 
+  dplyr::summarise(count = n(), d13C_mean = mean(d13C, na.rm = TRUE), sd_d13C = sd(d13C, na.rm = TRUE))
+```
+
+```{r}
+# estimated deviation between each site average value and the overall average
+ranef(sym.d13C.lme)
+#plot(ranef(sym.d13C.lme))
+```
+
+```{r}
+# examine plots of residuals versus fitted values
+residplot(sym.d13C.lme, level=2)
+plot(sym.d13C.lme)
+hist(residuals(sym.d13C.lme))
+
+# test the assumption of normality of deviations of the conditional means of the random effects from the global intercept
+qqnorm(sym.d13C.lme, ~ranef(., level=1))
+```
+
+
+```{r}
+plot(allEffects(sym.d13C.lme), ylab="Symbiont d13C")
+```
+
+
+################################################################
+
+```{r}
+sym.summary <- summarySE(sym.select, measurevar='d15N', groupvars=c("Treatment", "Holobiont_ID"), na.rm=TRUE, conf.interval = 0.95)
+sym.summary
+
+plot <- ggplot(data = subset(sym.summary,!is.na(Holobiont_ID)), aes(y=d15N, x=Holobiont_ID, color=Holobiont_ID, shape=Treatment)) + 
+  geom_jitter(data = subset(sym.select,!is.na(Holobiont_ID)), aes(y=d15N,x=Holobiont_ID, color=Holobiont_ID, shape=Treatment), alpha=0.8, position=position_dodge(0.5)) +
+  geom_point(size=3, position=position_dodge(0.3),stat="identity") + #, color='black'
+  #facet_wrap(~Genus) +
+  geom_errorbar(aes(ymin=d15N-se, ymax=d15N+se, width= 0.7),  position=position_dodge(0.3),stat="identity") + #, color='black'
+  #geom_path(aes(group = interaction(Treatment,Genus,Region), stat="identity"), position=position_dodge(0.3), color='black') +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  #scale_color_brewer(palette = "RdBu")+
+  ylab(expression("Symbiont  " * {delta}^15*N ~'(\u2030)')) +
+  #scale_y_continuous(limits = c(-20.3, -14), breaks = c(-20, -19, -18, -17, -16, -15, -14)) +
+  scale_x_discrete(labels = scales::label_wrap(10)) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "S. pistillata, C35a group"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061", "NA"='white')) + #FINAL COLOR SCHEME
+  theme(axis.text.x=element_text(vjust=0.5, size=9, face="italic"), panel.background = element_rect(fill = "white", colour = "black"), legend.position = "none", axis.title.x=element_blank())   #
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+
+plot
+
+#ggsave("GBR_Sym_d15N_Region_Holobiont-ID_Before_Final.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+
+
+
+# Big delta 15N dotplot by Holobiont ID and Treatment - all holobiont ID
+```{r}
+allhostd15N2 <- summarySE(host, measurevar='Big.delta.15N', groupvars=c("Treatment", "Holobiont_ID"), na.rm=TRUE, conf.interval = 0.95)
+allhostd15N2
+
+#allhostd15N2$Region <- factor(allhostd15N2$Region, levels=c("Lizard","Heron"))
+#allhostd15N2$Time <- factor(allhostd15N2$Time, levels=c("Before","During","After"))
+
+plot <- ggplot(data = subset(allhostd15N2,!is.na(Holobiont_ID)), aes(y=Big.delta.15N, x=Holobiont_ID, color=Holobiont_ID, shape=Treatment)) + 
+  geom_jitter(data = subset(host,!is.na(Holobiont_ID)), aes(y=Big.delta.15N,x=Holobiont_ID, color=Holobiont_ID, shape=Treatment), alpha=0.8, position=position_dodge(0.5)) +
+  geom_point(size=3, position=position_dodge(0.3),stat="identity") + #, color='black'
+  #facet_wrap(~Genus) +
+  geom_errorbar(aes(ymin=Big.delta.15N-se, ymax=Big.delta.15N+se, width= 0.7),  position=position_dodge(0.3),stat="identity") + #, color='black'
+  #geom_path(aes(group = interaction(Treatment,Genus,Region), stat="identity"), position=position_dodge(0.3), color='black') +
+  ylab(expression({Delta}^15*N ~" "[host-symbiont]~'(\u2030)')) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  #scale_color_brewer(palette = "RdBu")+
+  geom_hline(yintercept = 0, linetype = 2, color= 'grey50', size = 0.4) +
+  ylab(expression({Delta}^15*N ~" "[host-symbiont]~'(\u2030)')) +
+  scale_y_continuous(breaks = c(-0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5)) +
+  scale_x_discrete(labels = scales::label_wrap(10)) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061", "NA"='white')) + #FINAL COLOR SCHEME
+  #scale_fill_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+  theme(axis.text.x=element_text(vjust=0.5, size=9, face="italic"), panel.background = element_rect(fill = "white", colour = "black"), legend.position = "none", axis.title.x=element_blank())   #
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+
+plot
+
+###ggsave("GBR_2019_Big-delta-15N_Before_dots_Treatment.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+Remove genotypes with low samples sizes
+```{r}
+# only n=1 "S. pistillata, " (no symbiont ID assigned) 
+host.holo.select <- subset(host, Holobiont_ID != "S. pistillata, " | is.na(Holobiont_ID))
+
+# only handful n=4 of Before only (Heron) samples
+#host.holo.select <- subset(host.holo.select, Holobiont_ID != "S. pistillata, C35a group" | is.na(Holobiont_ID))
+
+# only handful n=4 "Pdam, C. latusorum" Heron only samples (1 Before, 3 After)
+host.holo.select <- subset(host.holo.select, Holobiont_ID != "Pdam, C. latusorum" | is.na(Holobiont_ID))
+
+host.holo.select$Holobiont_ID <- factor(host.holo.select$Holobiont_ID, levels = c("Pver(OPI40), C. pacificum", "Pver_Pbairdi, C. pacificum", "Pacuta, C. pacificum", "S. pistillata, C8 group", "S. pistillata, C8 groupH", "S. pistillata, C78a", "S. pistillata, C35a group", "Pdam, C33a_sGBR"))
+
+host.holo.select <- droplevels(host.holo.select)
+
+levels(host.holo.select$Holobiont_ID)
+
+dim(host.holo.select)
+```
+
+```{r}
+allhostd15N2 <- summarySE(host.holo.select, measurevar='Big.delta.15N', groupvars=c("Treatment", "Holobiont_ID"), na.rm=TRUE, conf.interval = 0.95)
+allhostd15N2
+
+#allhostd15N2$Region <- factor(allhostd15N2$Region, levels=c("Lizard","Heron"))
+#allhostd15N2$Time <- factor(allhostd15N2$Time, levels=c("Before","During","After"))
+
+plot <- ggplot(data = subset(allhostd15N2,!is.na(Holobiont_ID)), aes(y=Big.delta.15N, x=Holobiont_ID, color=Holobiont_ID, shape=Treatment)) + 
+  geom_jitter(data = subset(host.holo.select,!is.na(Holobiont_ID)), aes(y=Big.delta.15N,x=Holobiont_ID, color=Holobiont_ID, shape=Treatment), alpha=0.8, position=position_dodge(0.5)) +
+  geom_point(size=3, position=position_dodge(0.3),stat="identity") + #, color='black'
+  #facet_wrap(~Genus) +
+  geom_errorbar(aes(ymin=Big.delta.15N-se, ymax=Big.delta.15N+se, width= 0.7),  position=position_dodge(0.3),stat="identity") + #, color='black'
+  #geom_path(aes(group = interaction(Treatment,Genus,Region), stat="identity"), position=position_dodge(0.3), color='black') +
+  #ylab(expression({delta}^15*N ~" "[host-symbiont]~'(\u2030)')) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  #scale_color_brewer(palette = "RdBu")+
+  geom_hline(yintercept = 0, linetype = 2, color= 'grey50', size = 0.4) +
+  ylab(expression({delta}^15*N ~" "[host-symbiont]~'(\u2030)')) +
+  scale_y_continuous(breaks = c(-0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5)) +
+  scale_x_discrete(labels = scales::label_wrap(10)) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061", "NA"='white')) + #FINAL COLOR SCHEME
+  #scale_fill_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+  #theme(axis.text.x=element_text(vjust=0.5, size=9, face="italic"), panel.background = element_rect(fill = "white", colour = "black"), legend.position = "none", axis.title.x=element_blank())   #
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=9, angle = 90, face="italic"),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"),
+        legend.position = "none")
+
+plot
+
+#ggsave("GBR_2019_Big-delta-15N_Before_dots_Treatment_Final.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+
+# Big delta 13C dotplot by Holobiont ID and Treatment  - all Holobiont ID
+```{r}
+allhostd13C2 <- summarySE(host, measurevar='Big.delta.13C', groupvars=c("Treatment", "Holobiont_ID"), na.rm=TRUE, conf.interval = 0.95)
+allhostd13C2
+
+plot <- ggplot(data = subset(allhostd13C2,!is.na(Holobiont_ID)), aes(y=Big.delta.13C, x=Holobiont_ID, color=Holobiont_ID, shape=Treatment)) + 
+  geom_jitter(data = subset(host,!is.na(Holobiont_ID)), aes(y=Big.delta.13C,x=Holobiont_ID, color=Holobiont_ID, shape=Treatment), alpha=0.8, position=position_dodge(0.5)) +
+  geom_point(size=3, position=position_dodge(0.3),stat="identity") + #, color='black'
+  #facet_wrap(~Genus) +
+  geom_errorbar(aes(ymin=Big.delta.13C-se, ymax=Big.delta.13C+se, width= 0.7),  position=position_dodge(0.3),stat="identity") + #, color='black'
+  #geom_path(aes(group = interaction(Treatment,Genus,Region), stat="identity"), position=position_dodge(0.3), color='black') +
+  ylab(expression({Delta}^13*C ~" "[host-symbiont]~'(\u2030)')) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  #scale_color_brewer(palette = "RdBu")+
+  geom_hline(yintercept = 0, linetype = 2, color= 'grey50', size = 0.4) +
+  scale_y_continuous(limits = c(-3.25, 3), breaks = c(-3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5)) +
+  scale_x_discrete(labels = scales::label_wrap(10)) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061", "NA"='white')) + #FINAL COLOR SCHEME
+  #scale_fill_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+  theme(axis.text.x=element_text(vjust=0.5, size=9, face="italic"), panel.background = element_rect(fill = "white", colour = "black"), legend.position = "none", axis.title.x=element_blank())   #
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"))
+
+plot
+
+#ggsave("GBR_2019_Big-delta-13C_Before_dots_Treatment_axes.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+# Big delta 13C dotplot by Holobiont ID and Treatment
+```{r}
+allhostd13C2 <- summarySE(host.holo.select, measurevar='Big.delta.13C', groupvars=c("Treatment", "Holobiont_ID"), na.rm=TRUE, conf.interval = 0.95)
+allhostd13C2
+
+#allhostd15N2$Region <- factor(allhostd15N2$Region, levels=c("Lizard","Heron"))
+#allhostd15N2$Time <- factor(allhostd15N2$Time, levels=c("Before","During","After"))
+
+plot <- ggplot(data = subset(allhostd13C2,!is.na(Holobiont_ID)), aes(y=Big.delta.13C, x=Holobiont_ID, color=Holobiont_ID, shape=Treatment)) + 
+  geom_jitter(data = subset(host.holo.select,!is.na(Holobiont_ID)), aes(y=Big.delta.13C,x=Holobiont_ID, color=Holobiont_ID, shape=Treatment), alpha=0.8, position=position_dodge(0.5)) +
+  geom_point(size=3, position=position_dodge(0.3),stat="identity") + #, color='black'
+  #facet_wrap(~Genus) +
+  geom_errorbar(aes(ymin=Big.delta.13C-se, ymax=Big.delta.13C+se, width= 0.7),  position=position_dodge(0.3),stat="identity") + #, color='black'
+  #geom_path(aes(group = interaction(Treatment,Genus,Region), stat="identity"), position=position_dodge(0.3), color='black') +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  #scale_color_brewer(palette = "RdBu")+
+  geom_hline(yintercept = 0, linetype = 2, color= 'grey50', size = 0.4) +
+  ylab(expression({delta}^13*C ~" "[host-symbiont]~'(\u2030)')) +
+  scale_y_continuous(limits = c(-3.25, 3.3), breaks = c(-3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5)) +
+  scale_x_discrete(labels = scales::label_wrap(10)) +
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061", "NA"='white')) + #FINAL COLOR SCHEME
+  #scale_fill_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+  #theme(axis.text.x=element_text(vjust=0.5, size=9, face="italic"), panel.background = element_rect(fill = "white", colour = "black"), legend.position = "none", axis.title.x=element_blank())   #
+  theme_classic()+
+  theme(axis.text.x=element_text(vjust=0.5, size=9, angle = 90, face="italic"),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        #legend.position=c(0.89,0.89),
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12,face="italic"),
+        legend.position = "none")
+
+plot
+
+#ggsave("GBR_2019_Big-delta-13C_Before_dots_Treatment_Final.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+
+# Individual colonies - d13C over time
+```{r}
+ggplot(host, aes(x = Time, y = d13C, color = Sample_ID, group = Sample_ID)) +
+  facet_wrap(~Region * Treatment) +
+  #geom_point(aes(shape = class)) +
+  geom_point(size=3) +
+  geom_line(show.legend = FALSE) +
+  theme_classic() +
+    theme(legend.position = "none")
+```
+
+# Individual colonies - d13C over time - by Holobiont
+```{r}
+ggplot(host, aes(x = Time, y = d13C, color = Treatment, group = Sample_ID)) +
+  facet_wrap(~Region * Holobiont_ID) + #~Region * Treatment
+  #geom_point(aes(shape = class)) +
+  geom_point(size=2) +
+  geom_line(show.legend = FALSE) +
+  ylab(expression("Host  " * {delta}^13*C~('\u2030'))) +
+  theme_classic() +
+    theme(legend.position = "none")
+```
+
+
+# Individual colonies - d15N over time
+```{r}
+ggplot(host, aes(x = Time, y = d15N, color = Sample_ID, group = Sample_ID)) +
+  facet_wrap(~Region * Treatment) +
+  #geom_point(aes(shape = class)) +
+  geom_point(size=3) +
+  geom_line(show.legend = FALSE) +
+  theme_classic() +
+    theme(legend.position = "none")
+```
+
+
+# ellipse plot - Region * Genus ~ Host vs. Sym (Before)
+```{r}
+plot <- data.w.plank %>% 
+  filter(Genus != "Tubastraea" & Fraction != "Plankton" & Fraction != "POM") %>% 
+  ggplot(aes(d13C, d15N, color = Fraction)) +  
+  facet_wrap(Genus ~ Region, dir = "v") +
+  geom_point(alpha = 0.3, na.rm = TRUE, size = .7) +
+  stat_ellipse(aes(linetype=Treatment), level = .4, size = .7) + 
+  #scale_linetype_discrete(name = "Depth") +
+  scale_color_manual("Fraction", values=c("Host"= 'mediumpurple4',"Symbiont"= "cadetblue2")) +
+  xlab(expression({delta}^13*C~'\u2030')) +
+  ylab(expression({delta}^15*N~'\u2030')) +
+  #xlim(-20.5,-8.8) +
+  #ylim(2,8) +
+  coord_fixed() +
+  theme_bw()
+  #theme(axis.text.x=element_text(vjust=0.5, size=12), axis.text.y=element_text(vjust=0.5, size=12), panel.background = element_rect(fill = "white", colour = "grey50"), legend.position="none", strip.background = element_blank(), strip.text = element_blank())
+
+plot
+```
+
+
+```{r}
+host %>% 
+    filter(Genus != "" & Genus != "Tubastraea") %>% 
+    ggplot(aes(d13C, d15N, color = Holobiont_ID, shape = Treatment)) +
+      facet_wrap(~Region, dir = "h") +
+      geom_point(alpha = 0.6, na.rm = TRUE, size = 1) + 
+      stat_ellipse(aes(linetype=Genus), level = .4, size = 0.8) + 
+      xlab(expression("Host  " * {delta}^13*C~('\u2030'))) +
+      ylab(expression("Host  " * {delta}^15*N~('\u2030'))) +
+      scale_shape_manual("Size", values=c("Adult"=(pch=4),"Juvenile"=(pch=19))) + #"NA"=(pch=0)
+      #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  scale_color_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+      #scale_y_continuous(limits = c(3,6), breaks = c(3, 3.5, 4, 4.5, 5, 5.5, 6)) +
+      #scale_x_continuous(limits = c(0,3.2),breaks = c(0, 0.5, 1, 1.5, 2, 2.5, 3)) +
+      theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        #axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position = "right",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12))  #face="italic", 
+
+#legend.position= c(0.87, 0.7),  
+```
+
+```{r}
+host %>% 
+    filter(Genus != "" & Genus != "Tubastraea") %>% 
+    ggplot(aes(d13C, d15N, color = Holobiont_ID, shape = Treatment)) +
+      facet_wrap(~Genus, dir = "h") +
+      geom_point(alpha = 0.6, na.rm = TRUE, size = 1) + 
+      stat_ellipse(aes(linetype=Treatment), level = .4, size = 0.8) + 
+      xlab(expression("Host Protein cm"^2)) +
+      ylab(expression("Host  " * {delta}^15*N~('\u2030'))) +
+      scale_shape_manual("Size", values=c("Adult"=(pch=4),"Juvenile"=(pch=19))) + #"NA"=(pch=0)
+      #scale_color_manual("Region", values=c("Lizard"= 'coral1',"Heron"= "darkslategray")) +
+  scale_color_manual(values=c("Pver(OPI40), C. pacificum" = "#B2182B", "Pver_Pbairdi, C. pacificum" = "#D6604D", "Pacuta, C. pacificum" = "#F4A582", "S. pistillata, C8 group" = "#FDDBC7", "S. pistillata, C8 groupH" = "#D1E5F0", "S. pistillata, C78a" = "#92C5DE", "Pdam, C. latusorum" = "#4393C3", "Pdam, C33a_sGBR" = "#2166AC")) +
+      #scale_y_continuous(limits = c(3,6), breaks = c(3, 3.5, 4, 4.5, 5, 5.5, 6)) +
+      #scale_x_continuous(limits = c(0,3.2),breaks = c(0, 0.5, 1, 1.5, 2, 2.5, 3)) +
+      theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12),
+        axis.text.y=element_text(vjust=0.5, size=12),
+        #axis.title.x=element_blank(),
+        axis.title.y=element_text(size=12),
+        legend.text = element_text(vjust=0.5, size=12),
+        legend.position = "right",
+        panel.background= element_rect(fill=NA, color='black'),
+        strip.text = element_text(size=12))  #face="italic", 
+```
+
+# ellipse plot - Before data only
+```{r}
+#data.w.plank$Fraction.detail <- factor(data.w.plank$Fraction.detail, levels = c("Host", "Symbiont", "Non-symbiotic Coral", "Plankton, 65-153 um", "Plankton, 153-300 um", "Plankton, >300 um"))
+
+plot <- data.w.plank %>% 
+  filter(Time == "Before" & Genus != "" & Genus != "Tubastraea" & Fraction == "Host") %>% 
+  ggplot(aes(d13C, d15N, color = Region, shape=Treatment)) +  
+  facet_wrap(~Genus, dir = "h") +
+  geom_point(alpha = 0.8, na.rm = TRUE, size = 1) +
+  stat_ellipse(aes(linetype=Treatment), level = .4, size = .7) + 
+  #scale_linetype_manual(name = "Resources", values = c(4,4), guide = "legend") + #aesthetics = "hline_colour", guide = "legend"
+  scale_linetype_manual(values = c(1,2)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+   scale_fill_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+  xlab(expression({delta}^13*C~('\u2030'))) +
+  ylab(expression({delta}^15*N~('\u2030'))) +
+  #scale_x_continuous(limits = c(-20,-14), breaks = c(-20, -19, -18, -17, -16, -15, -14)) + #c(-22, -20, -18, -16, -14) #c(-21, -19, -17, -15, -13) #c(-21, -20, -19, -18, -17, -16, -15, -14)
+  #scale_y_continuous(limits = c(2.9,6), breaks = c(3, 3.5, 4, 4.5, 5, 5.5, 6)) +
+  #coord_fixed() +
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12), axis.text.y=element_text(vjust=0.5, size=12), panel.background = element_rect(fill = "white", colour = "grey50"), strip.background = element_blank()) #legend.position="none", strip.text = element_blank()
+
+plot
+
+#ggsave("GBR_2019_ellipses_Before_Host_Genus_Region-comparison.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+
+#ggsave("GBR_2019_ellipses_Before_Host_Genus_Region-comparison_wo-legend.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+
+# ellipse plot - Before data only - Holobiont colors - points only
+```{r}
+#data.w.plank$Fraction.detail <- factor(data.w.plank$Fraction.detail, levels = c("Host", "Symbiont", "Non-symbiotic Coral", "Plankton, 65-153 um", "Plankton, 153-300 um", "Plankton, >300 um"))
+#Fraction != "POM" & Fraction != "Plankton" &
+
+plot <- data.w.plank %>% 
+  filter(Time == "Before" & Genus != "" & Genus != "Tubastraea" & Fraction == "Host") %>%  
+  ggplot(aes(d13C, d15N, color = Holobiont_ID2, shape=Treatment)) +  
+  facet_wrap(~Genus, dir = "h") +
+  geom_point(alpha = 0.8, na.rm = TRUE, size = 1) +
+  #stat_ellipse(aes(linetype=Treatment), level = .4, size = .7) + 
+  #scale_linetype_manual(name = "Resources", values = c(4,4), guide = "legend") + #aesthetics = "hline_colour", guide = "legend"
+  scale_linetype_manual(values = c(1,2)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  #scale_color_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+  #scale_fill_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+  scale_color_manual("Holobiont", values=c("Pver(OPI40), C. pacificum"="#67001f","Pver_Pbairdi, C. pacificum"="#b2182b","Pacuta, C. pacificum"="#d6604d","Pocillopora"="#f4a582", "S. pistillata, C8 group"="#fddbc7","S. pistillata, C8 groupH"= "#fddbc7", "Stylophora"= "#d9d9d9", "Stylophora_Heron"="#d1e5f0", "S. pistillata, C78a"="#92c5de", "Pocillopora_Heron"="#4393c3", "Pdam, C. latusorum"="#2166ac","Pdam, C33a_sGBR"="#053061", "Tubastraea coccinea" = "darkorchid2", "Plankton, 65-153 um" = "#525252", "Plankton, 153-300 um" = "#969696", "Plankton, >300 um" = "#d9d9d9", "POM" = "black")) + #FINAL COLOR SCHEME "NA"='white', # "S. pistillata, C8 groupH"= "#d9d9d9",  #lightest gray #f0f0f0 , #bdbdbd, #737373
+  xlab(expression({delta}^13*C~('\u2030'))) +
+  ylab(expression({delta}^15*N~('\u2030'))) +
+  #scale_x_continuous(limits = c(-20,-14), breaks = c(-20, -19, -18, -17, -16, -15, -14)) + #c(-22, -20, -18, -16, -14) #c(-21, -19, -17, -15, -13) #c(-21, -20, -19, -18, -17, -16, -15, -14)
+  #scale_y_continuous(limits = c(2.9,6), breaks = c(3, 3.5, 4, 4.5, 5, 5.5, 6)) +
+  #coord_fixed() +
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12), axis.text.y=element_text(vjust=0.5, size=12), panel.background = element_rect(fill = "white", colour = "grey50"), strip.background = element_blank()) #legend.position="none", strip.text = element_blank()
+
+plot
+
+#ggsave("GBR_2019_ellipses_Before_Host_Genus_Region-comparison_Holobiont-points-only.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+
+#ggsave("GBR_2019_ellipses_Before_Host_Genus_Region-comparison_Holobiont-points-only_wo-legend.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
+
+# ellipse plot - During/After data only
+```{r}
+#data.w.plank$Fraction.detail <- factor(data.w.plank$Fraction.detail, levels = c("Host", "Symbiont", "Non-symbiotic Coral", "Plankton, 65-153 um", "Plankton, 153-300 um", "Plankton, >300 um"))
+
+plot <- data.w.plank %>% 
+  filter(Time != "Before" & Genus != "" & Genus != "Tubastraea" & Fraction == "Host") %>% 
+  ggplot(aes(d13C, d15N, color = Region, pch = Treatment)) +  
+  facet_wrap(~Genus, dir = "h") +
+  geom_point(alpha = 0.7, na.rm = TRUE, size = 1) +
+  stat_ellipse(aes(linetype=Treatment), level = .4, size = .7) + 
+  #scale_linetype_manual(name = "Resources", values = c(4,4), guide = "legend") + #aesthetics = "hline_colour", guide = "legend"
+  scale_linetype_manual(values = c(1,2)) +
+  scale_shape_manual("Treatment",values=c("Adult"=(pch=16),"Juvenile"=(pch=4), "NA"=(pch=0)))+
+  scale_color_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+   scale_fill_manual("Region", values=c("Lizard"="#fddbc7","Heron"= "#92c5de"))+
+  xlab(expression({delta}^13*C~('\u2030'))) +
+  ylab(expression({delta}^15*N~('\u2030'))) +
+  scale_x_continuous(limits = c(-20,-14), breaks = c(-20, -19, -18, -17, -16, -15, -14)) + #c(-22, -20, -18, -16, -14) #c(-21, -19, -17, -15, -13) #c(-21, -20, -19, -18, -17, -16, -15, -14)
+  scale_y_continuous(limits = c(2.9,6), breaks = c(3, 3.5, 4, 4.5, 5, 5.5, 6)) +
+  #coord_fixed() +
+  theme_classic() +
+  theme(axis.text.x=element_text(vjust=0.5, size=12), axis.text.y=element_text(vjust=0.5, size=12), panel.background = element_rect(fill = "white", colour = "grey50"), strip.background = element_blank()) #legend.position="none", strip.text = element_blank()
+
+plot
+
+#ggsave("GBR_2020_ellipses_After-During_Host_Genus_Region-comparison.pdf", plot = plot, device = cairo_pdf, width = 7, height = 4, units = "in", dpi = 1200)
+```
+
